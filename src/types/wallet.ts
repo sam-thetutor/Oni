@@ -27,14 +27,6 @@ export interface Transaction {
 export interface AICommand {
   id: string;
   prompt: string;
-  parsedAction: {
-    type: 'send' | 'receive' | 'swap' | 'balance' | 'history';
-    amount?: number;
-    token?: string;
-    toAddress?: string;
-    fromToken?: string;
-    toToken?: string;
-  };
   timestamp: Date;
   status: 'processing' | 'completed' | 'error';
   result?: string;
