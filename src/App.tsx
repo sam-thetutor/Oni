@@ -8,6 +8,7 @@ import { Wallet as WalletType } from './types/wallet';
 import ErrorPage from './components/ErrorPage';
 import { LeaderboardPage } from './pages/LeaderboardPage';
 import { AIInterface } from './components/AIInterface';
+import oniLogo from './assets/logos.png';
 
 function App() {
   const { authenticated,user, ready } = usePrivy();
@@ -48,9 +49,9 @@ function App() {
 
   if (!ready) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900 flex items-center justify-center">
+      <div className="min-h-screen bg-main-gradient font-mono text-text flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
+          <img src={oniLogo} alt="Oni" className="w-16 h-16 mx-auto mb-4" />
           <p className="text-gray-300">Initializing...</p>
         </div>
       </div>
