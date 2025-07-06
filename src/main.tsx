@@ -1,10 +1,14 @@
-import { StrictMode } from 'react';
-import { createRoot } from 'react-dom/client';
-import App from './App.tsx';
-import './index.css';
+import { createRoot } from "react-dom/client";
+import App from "./App.tsx";
+import "./index.css";
+import { PrivyProvider } from "@privy-io/react-auth";
+import { privyConfig } from "./config/privy";
+import { BrowserRouter } from "react-router-dom";
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>
+createRoot(document.getElementById("root")!).render(
+  <PrivyProvider appId={privyConfig.appId} config={privyConfig.config}>
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
+  </PrivyProvider>
 );

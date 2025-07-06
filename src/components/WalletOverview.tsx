@@ -1,39 +1,66 @@
 import React from 'react';
-import { Wallet, TrendingUp, Eye, Copy, Check } from 'lucide-react';
-import { Wallet as WalletType } from '../types/wallet';
+import { Wallet, TrendingUp, Eye, Copy, Check, RefreshCw } from 'lucide-react';
+import { useWalletBalance } from '../hooks/useWalletBalance';
 
 interface WalletOverviewProps {
-  wallet: WalletType;
+  walletAddress: string | null;
 }
 
-export const WalletOverview: React.FC<WalletOverviewProps> = ({ wallet }) => {
+export const WalletOverview: React.FC<WalletOverviewProps> = ({ walletAddress }) => {
   const [copiedAddress, setCopiedAddress] = React.useState(false);
+  const { xfi, mpx, isLoading, error, refreshBalances } = useWalletBalance(walletAddress);
 
   const copyAddress = () => {
-    navigator.clipboard.writeText(wallet.address);
-    setCopiedAddress(true);
-    setTimeout(() => setCopiedAddress(false), 2000);
+    if (walletAddress) {
+      navigator.clipboard.writeText(walletAddress);
+      setCopiedAddress(true);
+      setTimeout(() => setCopiedAddress(false), 2000);
+    }
   };
 
-  const totalValue = Object.values(wallet.balance).reduce((sum, value) => sum + value * 1000, 0); // Mock USD values
+  const totalValue = (xfi * 0.5) + (mpx * 0.1); // Mock USD values for CrossFi
 
   const tokens = [
-    { symbol: 'ETH', name: 'Ethereum', balance: wallet.balance.eth, value: wallet.balance.eth * 2000, change: '+5.2%' },
-    { symbol: 'USDC', name: 'USD Coin', balance: wallet.balance.usdc, value: wallet.balance.usdc * 1, change: '+0.1%' },
-    { symbol: 'USDT', name: 'Tether', balance: wallet.balance.usdt, value: wallet.balance.usdt * 1, change: '-0.05%' },
+    { 
+      symbol: 'XFI', 
+      name: 'CrossFi', 
+      balance: xfi, 
+      value: xfi * 0.5, 
+      change: '+5.2%' 
+    },
+    { 
+      symbol: 'MPX', 
+      name: 'MPX Token', 
+      balance: mpx, 
+      value: mpx * 0.1, 
+      change: '+0.1%' 
+    },
   ];
+
+  if (!walletAddress) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-6 shadow-2xl">
+          <div className="text-center py-8">
+            <Wallet className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-400">No Oni wallet found</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       {/* Wallet Address Card */}
       <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-6 shadow-2xl">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-white">Wallet Address</h2>
+          <h2 className="text-lg font-semibold text-white">Oni Wallet Address</h2>
           <Wallet className="w-5 h-5 text-purple-400" />
         </div>
         <div className="flex items-center justify-between bg-gray-800/50 rounded-lg p-3">
           <span className="text-gray-300 font-mono text-sm">
-            {wallet.address.slice(0, 10)}...{wallet.address.slice(-8)}
+            {walletAddress.slice(0, 10)}...{walletAddress.slice(-8)}
           </span>
           <button
             onClick={copyAddress}
@@ -48,8 +75,23 @@ export const WalletOverview: React.FC<WalletOverviewProps> = ({ wallet }) => {
       <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-6 shadow-2xl">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-white">Portfolio</h2>
-          <TrendingUp className="w-5 h-5 text-green-400" />
+          <div className="flex items-center space-x-2">
+            <TrendingUp className="w-5 h-5 text-green-400" />
+            <button
+              onClick={refreshBalances}
+              disabled={isLoading}
+              className="p-1 text-gray-400 hover:text-white transition-colors"
+            >
+              <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
         </div>
+        
+        {error && (
+          <div className="mb-4 p-3 bg-red-500/20 border border-red-500/30 rounded-lg">
+            <p className="text-red-400 text-sm">{error}</p>
+          </div>
+        )}
         
         <div className="mb-6">
           <div className="text-3xl font-bold text-white mb-1">
@@ -73,7 +115,7 @@ export const WalletOverview: React.FC<WalletOverviewProps> = ({ wallet }) => {
                 </div>
                 <div className="text-right">
                   <div className="text-white font-medium">
-                    {token.balance.toFixed(4)}
+                    {isLoading ? '...' : token.balance.toFixed(4)}
                   </div>
                   <div className="text-gray-400 text-sm">
                     ${token.value.toLocaleString('en-US', { minimumFractionDigits: 2 })}

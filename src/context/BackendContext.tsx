@@ -7,7 +7,7 @@ interface BackendContextType {
     message: string;
     code?: string;
   } | null;
-  sendMessage: (message: string) => Promise<any>;
+  sendMessage: (message: string, privateKey?: string) => Promise<any>;
   clearError: () => void;
 }
 

@@ -1,25 +1,32 @@
 import { BaseMessage } from "@langchain/core/messages";
 
 class MemoryStore {
-  private conversations: BaseMessage[];
+  private conversations: Map<string, BaseMessage[]>;
 
   constructor() {
-    this.conversations = [];
+    this.conversations = new Map();
   }
 
-  // Get conversation history
-  getHistory(): BaseMessage[] {
-    return this.conversations;
+  // Get conversation history for a user
+  getHistory(userId: string): BaseMessage[] {
+    return this.conversations.get(userId) || [];
   }
 
-  // Add message to history
-  addMessage(message: BaseMessage): void {
-    this.conversations.push(message);
+  // Save conversation history for a user
+  saveHistory(userId: string, messages: BaseMessage[]): void {
+    this.conversations.set(userId, messages);
   }
 
-  // Clear conversation history
-  clearHistory(): void {
-    this.conversations = [];
+  // Clear conversation history for a user
+  clearHistory(userId: string): void {
+    this.conversations.delete(userId);
+  }
+
+  // Add message to history for a user
+  addMessage(userId: string, message: BaseMessage): void {
+    const history = this.getHistory(userId);
+    history.push(message);
+    this.saveHistory(userId, history);
   }
 }
 

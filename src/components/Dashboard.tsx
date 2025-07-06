@@ -1,28 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Wallet as WalletType } from '../types/wallet';
 import { Header } from './Header';
 import { WalletOverview } from './WalletOverview';
 import { AIInterface } from './AIInterface';
 import { TransactionHistory } from './TransactionHistory';
 import { QuickActions } from './QuickActions';
+import { usePrivy, useWallets } from '@privy-io/react-auth';
 
 interface DashboardProps {
   wallet: WalletType;
   onDisconnect: () => void;
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ wallet, onDisconnect }) => {
+export const Dashboard: React.FC<DashboardProps> = () => {
   const [activeTab, setActiveTab] = useState<'ai' | 'history' | 'actions'>('ai');
+  const { wallets } = useWallets();
+  const [currentWallet, setCurrentWallet] = useState<any>(null);
+
+  useEffect(() => {
+    // Get the current connected wallet from Privy
+    if (wallets.length > 0) {
+      setCurrentWallet(wallets[0]);
+    }
+  }, [wallets]);
 
   return (
     <div className="min-h-screen">
-      <Header wallet={wallet} onDisconnect={onDisconnect} />
+      <Header />
       
       <div className="max-w-7xl mx-auto px-4 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Wallet Overview */}
           <div className="lg:col-span-1">
-            <WalletOverview wallet={wallet} />
+            <WalletOverview />
           </div>
 
           {/* Right Column - Main Interface */}
@@ -62,9 +72,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ wallet, onDisconnect }) =>
               </div>
 
               <div className="p-6">
-                {activeTab === 'ai' && <AIInterface wallet={wallet} />}
-                {activeTab === 'history' && <TransactionHistory wallet={wallet} />}
-                {activeTab === 'actions' && <QuickActions wallet={wallet} />}
+                {activeTab === 'ai' && <AIInterface />}
+                {activeTab === 'history' && <TransactionHistory />}
+                {activeTab === 'actions' && <QuickActions />}
               </div>
             </div>
           </div>

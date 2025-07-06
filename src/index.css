@@ -1,3 +1,17 @@
+/* Theme color variables */
+:root {
+  --color-bg: #0a0a23;
+  --color-bg-gradient-from: #0a0a23;
+  --color-bg-gradient-to: #1a237e;
+  --color-primary: #00eaff;
+  --color-secondary: #ff005c;
+  --color-accent: #ffb300;
+  --color-text: #ffffff;
+  --color-muted: #b0b0b0;
+  --color-glow: #00eaff80;
+}
+
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

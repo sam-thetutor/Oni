@@ -1,18 +1,16 @@
 import React, { useState } from 'react';
 import { Send, Download, RotateCcw, QrCode, Copy, Check } from 'lucide-react';
-import { Wallet } from '../types/wallet';
+import { useWallets } from '@privy-io/react-auth';
 
-interface QuickActionsProps {
-  wallet: Wallet;
-}
-
-export const QuickActions: React.FC<QuickActionsProps> = ({ wallet }) => {
+export const QuickActions= () => {
+  const {wallets} = useWallets();
+  const wallet = wallets[0];
   const [activeAction, setActiveAction] = useState<'send' | 'receive' | 'swap' | null>(null);
   const [formData, setFormData] = useState({
     amount: '',
-    token: 'ETH',
+    token: wallet.chainId === 'crossfi' ? 'XFI' : 'ETH',
     toAddress: '',
-    fromToken: 'ETH',
+    fromToken: wallet.chainId === 'crossfi' ? 'XFI' : 'ETH',
     toToken: 'USDC',
   });
   const [copied, setCopied] = useState(false);
@@ -28,10 +26,16 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ wallet }) => {
     // Handle form submission based on activeAction
     console.log('Form submitted:', { activeAction, formData });
     setActiveAction(null);
-    setFormData({ amount: '', token: 'ETH', toAddress: '', fromToken: 'ETH', toToken: 'USDC' });
+    setFormData({ 
+      amount: '', 
+      token: wallet.chainId === 'crossfi' ? 'XFI' : 'ETH', 
+      toAddress: '', 
+      fromToken: wallet.chainId === 'crossfi' ? 'XFI' : 'ETH', 
+      toToken: 'USDC' 
+    });
   };
 
-  const tokens = ['ETH', 'USDC', 'USDT'];
+  const tokens = wallet.chainId === 'crossfi' ? ['XFI', 'USDC', 'USDT'] : ['ETH', 'USDC', 'USDT'];
 
   return (
     <div className="space-y-6">
@@ -182,7 +186,7 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ wallet }) => {
             </div>
 
             <p className="text-gray-400 text-sm">
-              Share this address or QR code to receive tokens on {wallet.chain}
+              Share this address or QR code to receive tokens on {wallet.chainId}
             </p>
           </div>
         </div>

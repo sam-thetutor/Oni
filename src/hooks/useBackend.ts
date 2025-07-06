@@ -1,11 +1,20 @@
 import { useState, useCallback } from 'react';
 import { BackendError } from '../types/backend';
+import { usePrivy } from '@privy-io/react-auth';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3030';
 
-export const useBackend = () => {
+interface BackendContextType {
+  loading: boolean;
+  error: BackendError | null;
+  sendMessage: (message: string, walletAddress?: string) => Promise<any>;
+  clearError: () => void;
+}
+
+export const useBackend = (): BackendContextType => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<BackendError | null>(null);
+  const { user, authenticated, getAccessToken } = usePrivy();
 
   const handleError = (err: any): BackendError => {
     const error: BackendError = {
@@ -16,22 +25,41 @@ export const useBackend = () => {
     return error;
   };
 
-  const sendMessage = useCallback(async (message: string): Promise<any> => {
+  const sendMessage = useCallback(async (message: string, walletAddress?: string): Promise<any> => {
     setLoading(true);
     setError(null);
+    
     try {
+      // Check if user is authenticated
+      if (!authenticated || !user) {
+        throw new Error('User must be authenticated to access the API');
+      }
+
+      // Get Privy access token for authentication
+      const accessToken = await getAccessToken();
+      
       console.log('Sending message to backend:', message);
+      
+      const requestBody = { 
+        message
+      };
+
       const response = await fetch(`${BACKEND_URL}/message`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
         },
-        body: JSON.stringify({
-          message: message,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Authentication failed. Please reconnect your wallet.');
+        }
+        if (response.status === 403) {
+          throw new Error('Access denied. You are not authorized to perform this action.');
+        }
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.message || 'Failed to process request');
       }
@@ -45,7 +73,7 @@ export const useBackend = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [authenticated, user, getAccessToken]);
 
   const clearError = useCallback(() => {
     setError(null);

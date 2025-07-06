@@ -1,31 +1,75 @@
-import React, { useState } from 'react';
-import { WalletConnection } from './components/WalletConnection';
-import { Dashboard } from './components/Dashboard';
-import { Wallet } from './types/wallet';
+import React, { useState, useEffect } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { HomePage } from './pages/HomePage';
+import { WalletPage } from './pages/WalletPage';
 import { BackendProvider } from './context/BackendContext';
+import { usePrivy, useWallets } from '@privy-io/react-auth';
+import { Wallet as WalletType } from './types/wallet';
+import ErrorPage from './components/ErrorPage';
+import { LeaderboardPage } from './pages/LeaderboardPage';
+import { AIInterface } from './components/AIInterface';
 
 function App() {
-  const [wallet, setWallet] = useState<Wallet | null>(null);
+  const { authenticated,user, ready } = usePrivy();
+  const { wallets } = useWallets();
+  const [walletData, setWalletData] = useState<WalletType | null>(null);
 
-  const handleWalletConnect = (walletData: Wallet) => {
-    setWallet(walletData);
-  };
+  // Handle wallet connection
+  useEffect(() => {
+    const initializeWallet = async () => {
+      if (authenticated && wallets.length > 0 && ready) {
+        try {
+          const wallet = wallets[0]; // Get the first connected wallet
+          const address = wallet.address;
+          
+          // Create wallet data object
+          const walletInfo: WalletType = {
+            address,
+            balance: {
+              eth: 0, // Will be updated by WalletConnection component
+              usdc: 0,
+              usdt: 0,
+            },
+            chain: 'crossfi', // Default to CrossFi
+            connectionType: 'privy',
+          };
+          
+          setWalletData(walletInfo);
+        } catch (error) {
+          console.error('Error initializing wallet:', error);
+        }
+      } else {
+        setWalletData(null);
+      }
+    };
 
-  const handleDisconnect = () => {
-    setWallet(null);
-  };
+    initializeWallet();
+  }, [authenticated, wallets, ready]);
+
+  if (!ready) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
+          <p className="text-gray-300">Initializing...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <BackendProvider>
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=%2260%22 height=%2260%22 viewBox=%220 0 60 60%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cg fill=%22none%22 fill-rule=%22evenodd%22%3E%3Cg fill=%22%239C92AC%22 fill-opacity=%220.05%22%3E%3Ccircle cx=%2230%22 cy=%2230%22 r=%222%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-20"></div>
-        
-        {!wallet ? (
-          <WalletConnection onConnect={handleWalletConnect} />
-        ) : (
-          <Dashboard wallet={wallet} onDisconnect={handleDisconnect} />
-        )}
-      </div>
+        <div className="min-h-screen bg-main-gradient font-mono text-text">
+          <div className="absolute inset-0 opacity-20"></div>
+          {/* <Header /> */}
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/wallet" element={<WalletPage />} />
+            <Route path="/ai" element={<AIInterface />} />
+            <Route path="/leaderboard" element={<LeaderboardPage />} />
+            <Route path="*" element={<ErrorPage />} />
+          </Routes>
+        </div>
     </BackendProvider>
   );
 }

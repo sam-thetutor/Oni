@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 import { ArrowUpRight, ArrowDownLeft, RotateCcw, Clock, CheckCircle, XCircle, ExternalLink, Filter } from 'lucide-react';
 import { Wallet, Transaction } from '../types/wallet';
+  import { useWallets } from '@privy-io/react-auth';
 
-interface TransactionHistoryProps {
-  wallet: Wallet;
-}
-
-export const TransactionHistory: React.FC<TransactionHistoryProps> = ({ wallet }) => {
+export const TransactionHistory= () => {
+  const {wallets} = useWallets();
+  const wallet = wallets[0];
   const [filter, setFilter] = useState<'all' | 'send' | 'receive' | 'swap'>('all');
 
   // Mock transaction data

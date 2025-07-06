@@ -6,8 +6,8 @@ export interface Wallet {
     usdt: number;
     [key: string]: number;
   };
-  chain: 'ethereum' | 'polygon' | 'bsc' | 'arbitrum';
-  connectionType: 'seedphrase' | 'privatekey';
+  chain: 'ethereum' | 'polygon' | 'bsc' | 'arbitrum' | 'crossfi';
+  connectionType: 'seedphrase' | 'privatekey' | 'privy';
 }
 
 export interface Transaction {

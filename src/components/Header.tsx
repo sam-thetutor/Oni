@@ -1,69 +1,104 @@
-import React from 'react';
-import { LogOut, Wallet, Shield, Globe } from 'lucide-react';
-import { Wallet as WalletType } from '../types/wallet';
+import React, { useState } from "react";
+import { LogOut, Wallet, LogIn, TestTube } from "lucide-react";
+import { usePrivy } from "@privy-io/react-auth";
+import { Link, useNavigate } from "react-router-dom";
+import { TestModal } from "./TestModal";
+import oniLogo from "../assets/logos.png";
 
-interface HeaderProps {
-  wallet: WalletType;
-  onDisconnect: () => void;
-}
-
-export const Header: React.FC<HeaderProps> = ({ wallet, onDisconnect }) => {
-  const getChainIcon = (chain: string) => {
-    switch (chain) {
-      case 'ethereum':
-        return '⟐';
-      case 'polygon':
-        return '⬟';
-      case 'bsc':
-        return '🟡';
-      case 'arbitrum':
-        return '🔵';
-      default:
-        return '⬢';
-    }
-  };
+export const Header: React.FC = () => {
+  const navigate = useNavigate();
+  const { logout, login, authenticated } = usePrivy();
+  const [isTestModalOpen, setIsTestModalOpen] = useState(false);
 
   return (
-    <header className="border-b border-white/10 bg-black/20 backdrop-blur-lg">
+    <>
+      <header className="border-b border-white/10 bg-main-gradient font-mono text-text backdrop-blur-lg">
       <div className="max-w-7xl mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <div className="p-2 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg">
-                <Wallet className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-white">CryptoAI Agent</h1>
-                <p className="text-xs text-gray-400">Intelligent Blockchain Transactions</p>
-              </div>
+              <div className="flex items-center ">
+                <img src={oniLogo} alt="Oni" className="w-12 h-8" />
+                <Link to="/" className="hover:opacity-80 transition-opacity">
+                    <h1 className="text-xl font-bold text-white font-mono">Oni </h1>
+                    {/* <p className="text-xs text-gray-400">
+                      Personalized Ai Assistant
+                    </p> */}
+                </Link>
             </div>
           </div>
 
           <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-3 bg-white/10 rounded-full px-4 py-2">
+              {/* Navigation Links for testing */}
               <div className="flex items-center space-x-2">
-                <span className="text-lg">{getChainIcon(wallet.chain)}</span>
-                <span className="text-sm font-medium text-white capitalize">{wallet.chain}</span>
+                {/* <Link 
+                  to="/" 
+                  className="px-3 py-2 text-gray-300 hover:text-white transition-colors rounded-lg hover:bg-white/10"
+                >
+                  Home
+                </Link> */}
+               {/* {authenticated && <Link 
+                  to="/ai" 
+                  className="px-3 py-2 text-gray-300 hover:text-white transition-colors rounded-lg hover:bg-white/10"
+                >
+                  Chat
+                  </Link>} */}
+                  {authenticated && (
+                    <button
+                      onClick={() => setIsTestModalOpen(true)}
+                      className="px-3 py-2 text-gray-300 hover:text-white transition-colors rounded-lg hover:bg-white/10 flex items-center space-x-2"
+                    >
+                      <span>Chat</span>
+                    </button>
+                  )}
+                <Link 
+                  to="/leaderboard" 
+                  className="px-3 py-2 text-gray-300 hover:text-white transition-colors rounded-lg hover:bg-white/10"
+                  >
+                  Leaderboard
+                </Link>
+                  {
+                    authenticated && 
+                    <Link 
+                    to="/wallet" 
+                    className="px-3 py-2 text-gray-300 hover:text-white transition-colors rounded-lg hover:bg-white/10"
+                  >
+                    Profile
+                  </Link>
+                  }
+                
+                {/* Test Modal Button */}
               </div>
-              <div className="w-px h-4 bg-white/20"></div>
-              <div className="flex items-center space-x-2">
-                <Shield className="w-4 h-4 text-green-400" />
-                <span className="text-sm text-gray-300">
-                  {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
-                </span>
-              </div>
-            </div>
+              
+            
 
+              {/* Show connect/disconnect button */}
+              {authenticated ? (
             <button
-              onClick={onDisconnect}
+                  onClick={()=>{logout();navigate('/')}}
               className="flex items-center space-x-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-lg text-red-400 hover:text-red-300 transition-all duration-200"
             >
               <LogOut className="w-4 h-4" />
               <span className="text-sm font-medium">Disconnect</span>
             </button>
+              ) : (
+                <button
+                  onClick={() => login()}
+                  className="flex items-center space-x-2 px-4 py-2 bg-green-500/10 hover:bg-green-500/20 border border-green-500/20 rounded-lg text-green-400 hover:text-green-300 transition-all duration-200"
+                >
+                  <LogIn className="w-4 h-4" />
+                  <span className="text-sm font-medium">Connect</span>
+                </button>
+              )}
           </div>
         </div>
       </div>
     </header>
+
+      {/* Test Modal */}
+      <TestModal 
+        isOpen={isTestModalOpen} 
+        onClose={() => setIsTestModalOpen(false)} 
+      />
+    </>
   );
 };
