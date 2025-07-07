@@ -126,20 +126,28 @@ export class ContractReadService {
     try {
       console.log('ContractReadService: Checking global payment link status for:', linkId);
 
-      // Get global payment link details from contract
+      // Get global payment link details from contract - returns array format
       const result = await this.publicClient.readContract({
         address: PAYLINK_CONTRACT_ADDRESS as `0x${string}`,
         abi: PAYLINK_ABI,
         functionName: 'globalPaymentLink',
         args: [linkId],
-      }) as {
-        creator: string;
-        link: string;
-        totalContributions: bigint;
-      };
+      }) as [string, string, bigint]; // [creator, linkId, totalContributions]
 
-      // Check if result is valid
-      if (!result || result.totalContributions === undefined || result.creator === undefined) {
+      console.log('ContractReadService: Raw global payment link response (array format):', result);
+
+      // Check if result is valid array with expected length
+      if (!result || !Array.isArray(result) || result.length !== 3) {
+        return {
+          success: false,
+          error: 'Global payment link data not found or invalid'
+        };
+      }
+
+      const [creator, returnedLinkId, totalContributions] = result;
+
+      // Additional validation - check if creator is zero address (means doesn't exist)
+      if (!creator || creator === '0x0000000000000000000000000000000000000000' || totalContributions === undefined) {
         return {
           success: false,
           error: 'Global payment link does not exist on blockchain'
@@ -147,16 +155,18 @@ export class ContractReadService {
       }
 
       // Convert total contributions from Wei to XFI
-      const totalContributionsInXFI = Number(result.totalContributions) / Math.pow(10, 18);
+      const totalContributionsInXFI = Number(totalContributions) / Math.pow(10, 18);
 
       return {
         success: true,
         data: {
           linkId: linkId,
-          creator: result.creator,
-          totalContributions: result.totalContributions.toString(),
+          creator: creator,
+          totalContributions: totalContributions.toString(),
           totalContributionsInXFI: totalContributionsInXFI,
+          status: 'active', // Global payment links are always active (they don't have paid/unpaid status)
           type: 'global',
+          exists: true,
           source: 'blockchain'
         }
       };
@@ -164,9 +174,19 @@ export class ContractReadService {
     } catch (error: any) {
       console.error('ContractReadService: Error checking global payment link status:', error);
       
+      let errorMessage = 'Failed to check global payment link status from blockchain';
+      
+      if (error.message?.includes('execution reverted')) {
+        errorMessage = 'Global payment link not found on blockchain';
+      } else if (error.message?.includes('network') || error.message?.includes('fetch')) {
+        errorMessage = 'Network error - unable to connect to blockchain';
+      } else if (error.message) {
+        errorMessage = `Blockchain error: ${error.message}`;
+      }
+
       return {
         success: false,
-        error: 'Failed to check global payment link status from blockchain'
+        error: errorMessage
       };
     }
   }

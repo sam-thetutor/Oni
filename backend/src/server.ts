@@ -9,6 +9,7 @@ import { connectDB } from "./db/connect.js";
 import { contractRoutes } from "./routes/contract.js";
 import gamificationRoutes from "./routes/gamification.js";
 import userWalletRoutes from "./routes/userWallet.js";
+import userPaymentLinksRoutes from "./routes/userPaymentLinks.js";
 
 config();
 
@@ -28,8 +29,9 @@ app.use('/api/contract', contractRoutes);
 // Gamification routes
 app.use('/api/gamification', gamificationRoutes);
 
-
+// User routes
 app.use('/api/user/wallet', userWalletRoutes);
+app.use('/api/user/payment-links', userPaymentLinksRoutes);
 
 
 

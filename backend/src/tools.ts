@@ -438,40 +438,77 @@ class SetUsernameTool extends StructuredTool {
   }
 }
 
-// Create Global Payment Link Tool
+// Create Global Payment Link Tool (Explicit)
 class CreateGlobalPaymentLinkTool extends StructuredTool {
   name = "create_global_payment_link";
-  description = "Creates a global payment link for the user";
+  description = "Explicitly creates a global payment link that can accept any amount of contributions from multiple users. Note: The general create_payment_links tool automatically creates global links when no amount is specified.";
   schema = z.object({}) as any;
 
   protected async _call(input: z.infer<typeof this.schema>, runManager?: any): Promise<string> {
     try {
+      // Get wallet address from global variable
       const walletAddress = currentUserId;
+      
       if (!walletAddress) {
-        return JSON.stringify({ success: false, error: 'Wallet address not found. Please try again.' }) as any;
+        return JSON.stringify({ 
+          success: false, 
+          error: 'Wallet address not found. Please try again.' 
+        }) as any;
       }
+
+      // Get user from database
       const user = await WalletService.getWalletByAddress(walletAddress);
+      
       if (!user) {
-        return JSON.stringify({ success: false, error: 'User wallet not found in database' }) as any;
+        return JSON.stringify({ 
+          success: false, 
+          error: 'User wallet not found in database' 
+        }) as any;
       }
 
-      const paymentLink = await PaymentLink.create({
-        linkId: nanoid(10),
-        userId: user.privyId,
-        amount: 0,
-        status: 'active',
-        createdAt: new Date(),
-        updatedAt: new Date()
+      // Generate a unique linkID
+      const globalLinkID = nanoid(10);
+
+      // Get wallet for operations (includes private key)
+      const walletForOps = await WalletService.getWalletForOperations(user.privyId);
+
+      if (!walletForOps) {
+        return JSON.stringify({ 
+          success: false, 
+          error: 'Failed to get wallet for operations' 
+        }) as any;
+      }
+
+      // Create global payment link on blockchain
+      const transactionHash = await PaymentLinkService.createGlobalPaymentLinkOnChain(
+        walletForOps.privateKey, 
+        globalLinkID
+      );
+
+      // Create global payment link in database
+      const paymentLink = await PaymentLinkService.createGlobalPaymentLink(
+        user.privyId, 
+        globalLinkID
+      );
+
+      return JSON.stringify({
+        success: true,
+        linkID: globalLinkID,
+        type: 'global',
+        status: paymentLink.status,
+        transactionHash: transactionHash,
+        paymentUrl: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/global-paylink/${globalLinkID}`,
+        shareableLink: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/global-paylink/${globalLinkID}`,
+        description: 'Global payment link allows unlimited contributions from multiple users',
+        createdAt: paymentLink.createdAt,
+        updatedAt: paymentLink.updatedAt
       }) as any;
-      return JSON.stringify({ success: true, paymentLink }) as any;
-
-
-
-
-
     } catch (error: any) {
       console.error('Error in create_global_payment_link:', error);
-      return JSON.stringify({ success: false, error: error.message }) as any;
+      return JSON.stringify({ 
+        success: false, 
+        error: error.message 
+      }) as any;
     }
   }
 }
@@ -479,9 +516,9 @@ class CreateGlobalPaymentLinkTool extends StructuredTool {
 // Create Payment Links Tool
 class CreatePaymentLinksTool extends StructuredTool {
   name = "create_payment_links";
-  description = "Creates a payment link for a specified amount on the blockchain";
+  description = "Creates a payment link. If amount is specified, creates a fixed payment link. If no amount is specified, creates a global payment link that accepts any contributions.";
   schema = z.object({
-    amount: z.string().describe("The amount for the payment link in XFI (e.g., '0.1')")
+    amount: z.string().optional().describe("Optional: The amount for a fixed payment link in XFI (e.g., '0.1'). If not provided, creates a global payment link.")
   }) as any;
 
   protected async _call(input: z.infer<typeof this.schema>, runManager?: any): Promise<string> {
@@ -521,31 +558,67 @@ class CreatePaymentLinksTool extends StructuredTool {
         }) as any;
       }
 
-      // Create payment link on blockchain
-      const transactionHash = await PaymentLinkService.createPaymentLinkOnChain(
-        walletForOps.privateKey, 
-        paymentLinkID, 
-        amount
-      );
+      // Determine if this should be a global or fixed payment link
+      const isGlobal = !amount || amount.trim() === '';
+      
+      if (isGlobal) {
+        console.log('Creating global payment link (no amount specified)');
+        
+        // Create global payment link on blockchain
+        const transactionHash = await PaymentLinkService.createGlobalPaymentLinkOnChain(
+          walletForOps.privateKey, 
+          paymentLinkID
+        );
 
-      // Create payment link in database
-      const paymentLink = await PaymentLinkService.createPaymentLink(
-        user.privyId, 
-        Number(amount), 
-        paymentLinkID
-      );
+        // Create global payment link in database
+        const paymentLink = await PaymentLinkService.createGlobalPaymentLink(
+          user.privyId, 
+          paymentLinkID
+        );
 
-      return JSON.stringify({
-        success: true,
-        linkID: paymentLinkID,
-        amount: paymentLink.amount,
-        status: paymentLink.status,
-        transactionHash: transactionHash,
-        paymentUrl: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/paylink/${paymentLinkID}`,
-        shareableLink: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/paylink/${paymentLinkID}`,
-        createdAt: paymentLink.createdAt,
-        updatedAt: paymentLink.updatedAt
-      }) as any;
+        return JSON.stringify({
+          success: true,
+          linkID: paymentLinkID,
+          type: 'global',
+          status: paymentLink.status,
+          transactionHash: transactionHash,
+          paymentUrl: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/global-paylink/${paymentLinkID}`,
+          shareableLink: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/global-paylink/${paymentLinkID}`,
+          description: 'Global payment link allows unlimited contributions from multiple users',
+          createdAt: paymentLink.createdAt,
+          updatedAt: paymentLink.updatedAt
+        }) as any;
+      } else {
+        console.log(`Creating fixed payment link with amount: ${amount} XFI`);
+        
+        // Create fixed payment link on blockchain
+        const transactionHash = await PaymentLinkService.createPaymentLinkOnChain(
+          walletForOps.privateKey, 
+          paymentLinkID, 
+          amount
+        );
+
+        // Create fixed payment link in database
+        const paymentLink = await PaymentLinkService.createPaymentLink(
+          user.privyId, 
+          Number(amount), 
+          paymentLinkID
+        );
+
+        return JSON.stringify({
+          success: true,
+          linkID: paymentLinkID,
+          type: 'fixed',
+          amount: paymentLink.amount,
+          status: paymentLink.status,
+          transactionHash: transactionHash,
+          paymentUrl: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/paylink/${paymentLinkID}`,
+          shareableLink: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/paylink/${paymentLinkID}`,
+          description: `Fixed payment link for ${amount} XFI`,
+          createdAt: paymentLink.createdAt,
+          updatedAt: paymentLink.updatedAt
+        }) as any;
+      }
     } catch (error: any) {
       console.error('Error in create_payment_links:', error);
       return JSON.stringify({ 
@@ -645,6 +718,101 @@ class PayFixedPaymentLinkTool extends StructuredTool {
       return JSON.stringify({ 
         success: false, 
         error: error.message 
+      }) as any;
+    }
+  }
+}
+
+// Contribute to Global Payment Link Tool
+class ContributeToGlobalPaymentLinkTool extends StructuredTool {
+  name = "contribute_to_global_payment_link";
+  description = "Allows users to contribute any amount to an existing global payment link";
+  schema = z.object({
+    linkId: z.string().describe("The ID of the global payment link to contribute to"),
+    amount: z.string().describe("The amount to contribute in XFI (e.g., '0.1')")
+  }) as any;
+
+  protected async _call(input: z.infer<typeof this.schema>, runManager?: any): Promise<string> {
+    try {
+      const { linkId, amount } = input;
+      
+      console.log(`Tool called: contribute to global payment link ${linkId} with amount ${amount} XFI`);
+
+      // Get wallet address from global variable
+      const walletAddress = currentUserId;
+      
+      if (!walletAddress) {
+        return JSON.stringify({ 
+          success: false, 
+          error: 'Wallet address not found. Please try again.' 
+        }) as any;
+      }
+
+      // Get user from database
+      const user = await WalletService.getWalletByAddress(walletAddress);
+      
+      if (!user) {
+        return JSON.stringify({ 
+          success: false, 
+          error: 'User wallet not found in database' 
+        }) as any;
+      }
+
+      // First, check if the global payment link exists
+      const contractReadService = new ContractReadService();
+      const linkStatus = await contractReadService.checkGlobalPaymentLinkStatus(linkId);
+      
+      if (!linkStatus.success) {
+        return JSON.stringify({ 
+          success: false, 
+          error: `Global payment link '${linkId}' does not exist. Please verify the link ID.` 
+        }) as any;
+      }
+
+      console.log('Global payment link found:', linkStatus.data);
+
+      // Get wallet for operations (includes private key)
+      const walletForOps = await WalletService.getWalletForOperations(user.privyId);
+
+      if (!walletForOps) {
+        return JSON.stringify({ 
+          success: false, 
+          error: 'Failed to get wallet for operations' 
+        }) as any;
+      }
+
+      // Use contract service to contribute to the global payment link
+      const { ContractService } = await import('./services/contract.js');
+      const contractService = new ContractService(walletForOps.privateKey);
+      
+      const result = await contractService.contributeToGlobalPaymentLink(linkId, amount);
+      
+      if (result.success) {
+        return JSON.stringify({
+          success: true,
+          linkId: linkId,
+          contributionAmount: amount,
+          contributionAmountXFI: Number(amount),
+          transactionHash: result.data.transactionHash,
+          linkCreator: linkStatus.data.creator,
+          previousTotal: linkStatus.data.totalContributionsInXFI,
+          newEstimatedTotal: linkStatus.data.totalContributionsInXFI + Number(amount),
+          message: `Successfully contributed ${amount} XFI to global payment link ${linkId}`,
+          transactionUrl: `https://test.xfiscan.com/tx/${result.data.transactionHash}`,
+          explorerLink: `<a href="https://test.xfiscan.com/tx/${result.data.transactionHash}" target="_blank" rel="noopener noreferrer">View on Explorer</a>`
+        }) as any;
+      } else {
+        return JSON.stringify({ 
+          success: false, 
+          error: result.error || 'Failed to contribute to global payment link' 
+        }) as any;
+      }
+
+    } catch (error: any) {
+      console.error('Error in contribute_to_global_payment_link:', error);
+      return JSON.stringify({ 
+        success: false, 
+        error: error.message || 'An error occurred while contributing to the global payment link'
       }) as any;
     }
   }
@@ -752,5 +920,6 @@ export const ALL_TOOLS_LIST = [
   new CreateGlobalPaymentLinkTool(),
   new CreatePaymentLinksTool(),
   new PayFixedPaymentLinkTool(),
+  new ContributeToGlobalPaymentLinkTool(),
   new CheckPaymentLinkStatusTool(),
 ]; 

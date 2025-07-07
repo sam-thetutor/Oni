@@ -56,15 +56,15 @@ export const Header: React.FC = () => {
                   >
                   Leaderboard
                 </Link>
-                  {
-                    authenticated && 
+                  {authenticated && (
                     <Link 
-                    to="/wallet" 
-                    className="px-3 py-2 text-gray-300 hover:text-white transition-colors rounded-lg hover:bg-white/10"
-                  >
-                    Profile
-                  </Link>
-                  }
+                      to="/wallet" 
+                      className="px-3 py-2 text-gray-300 hover:text-white transition-colors rounded-lg hover:bg-white/10 flex items-center space-x-1"
+                    >
+                      <Wallet className="w-4 h-4" />
+                      <span>Wallet</span>
+                    </Link>
+                  )}
                 
                 {/* Test Modal Button */}
               </div>
