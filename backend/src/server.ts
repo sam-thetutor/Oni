@@ -6,7 +6,7 @@ import { HumanMessage, AIMessage } from "@langchain/core/messages";
 import { memoryStore } from "./memory.js";
 import { authenticateToken, requireWalletConnection } from "./middleware/auth.js";
 import { connectDB } from "./db/connect.js";
-import contractRoutes from "./routes/contract.js";
+import { contractRoutes } from "./routes/contract.js";
 import gamificationRoutes from "./routes/gamification.js";
 import userWalletRoutes from "./routes/userWallet.js";
 

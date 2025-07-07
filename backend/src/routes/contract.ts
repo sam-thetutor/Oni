@@ -1,82 +1,49 @@
-import express from 'express';
+import { Router } from 'express';
 import { ContractController } from '../controllers/contract.js';
-import { config } from 'dotenv';
-import {
-    validatePrivateKey,
-    validateAmount,
-    validateLinkId,
-    validateInvoiceId
-} from '../middleware/contract.js';
+import { authenticateToken } from '../middleware/auth.js';
 
-config();
-
-const router = express.Router();
+const router = Router();
 const contractController = new ContractController();
 
-// Global payment link routes
-router.post('/global',
-    validatePrivateKey,
-    validateLinkId,
-    contractController.createGlobalPaymentLink.bind(contractController)
+// Payment link creation routes
+router.post('/create-global-payment-link', 
+  authenticateToken,
+  contractController.createGlobalPaymentLink.bind(contractController)
 );
 
-router.post('/global/contribute',
-    validatePrivateKey,
-    validateLinkId,
-    validateAmount,
-    contractController.contributeToGlobalPaymentLink.bind(contractController)
+router.post('/create-fixed-payment-link', 
+  authenticateToken,
+  contractController.createFixedPaymentLink.bind(contractController)
 );
 
-router.get('/global/:linkID',
-    validateLinkId,
-    contractController.getGlobalPaymentLink.bind(contractController)
+router.post('/create-invoice', 
+  authenticateToken,
+  contractController.createInvoice.bind(contractController)
 );
 
-// Fixed payment link routes
-router.post('/fixed',
-    validatePrivateKey,
-    validateLinkId,
-    validateAmount,
-    contractController.createFixedPaymentLink.bind(contractController)
+// Payment routes
+router.post('/pay-global-payment-link', 
+  authenticateToken,
+  contractController.payGlobalPaymentLink.bind(contractController)
 );
 
-router.post('/fixed/pay',
-    validatePrivateKey,
-    validateLinkId,
-    validateAmount,
-    contractController.payFixedPaymentLink.bind(contractController)
+router.post('/pay-fixed-payment-link', 
+  authenticateToken,
+  contractController.payFixedPaymentLink.bind(contractController)
 );
 
-router.get('/fixed/:linkID',
-    validateLinkId,
-    contractController.getFixedPaymentLink.bind(contractController)
+router.post('/pay-invoice', 
+  authenticateToken,
+  contractController.payInvoice.bind(contractController)
 );
 
-// Invoice routes
-router.post('/invoice',
-    validatePrivateKey,
-    validateInvoiceId,
-    validateAmount,
-    contractController.createInvoice.bind(contractController)
+// Status check routes (no auth required for public status checks)
+router.get('/payment-link-status/:linkId', 
+  contractController.checkPaymentLinkStatus.bind(contractController)
 );
 
-router.post('/invoice/pay',
-    validatePrivateKey,
-    validateInvoiceId,
-    validateAmount,
-    contractController.payInvoice.bind(contractController)
+router.get('/global-payment-link-status/:linkId', 
+  contractController.checkGlobalPaymentLinkStatus.bind(contractController)
 );
 
-router.get('/invoice/:invoiceId',
-    validateInvoiceId,
-    contractController.getInvoice.bind(contractController)
-);
-
-// Utility routes
-router.get('/check/:type/:linkId',
-    validateLinkId,
-    contractController.checkLinkExists.bind(contractController)
-);
-
-
-export default router; 
+export { router as contractRoutes }; 
