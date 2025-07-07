@@ -9,6 +9,7 @@ import { PaymentLink } from "./models/PaymentLink.js";
 import { nanoid } from "nanoid";
 import { PaymentLinkService } from "./services/paymentlinks.js";
 import { ContractReadService } from "./services/contractread.js";
+import { CRYPTO_ASSISTANT_TOOLS } from "./tools/crypto-assistant.js";
 
 // Global variable to store current user ID (set by the graph)
 let currentUserId: string | null = null;
@@ -909,17 +910,25 @@ class CheckPaymentLinkStatusTool extends StructuredTool {
 
 // Export tools list
 export const ALL_TOOLS_LIST = [
+  // Wallet & Transaction Tools
   new GetWalletInfoTool(),
   new GetWalletForOperationsTool(),
   new GetBalanceTool(),
   new SendTransactionTool(),
   new GetTransactionHistoryTool(),
+  
+  // Gamification Tools
   new GetUserStatsTool(),
   new GetLeaderboardTool(),
   new SetUsernameTool(),
+  
+  // Payment Link Tools
   new CreateGlobalPaymentLinkTool(),
   new CreatePaymentLinksTool(),
   new PayFixedPaymentLinkTool(),
   new ContributeToGlobalPaymentLinkTool(),
   new CheckPaymentLinkStatusTool(),
+  
+  // Crypto Assistant Tools - CrossFi Ecosystem Insights
+  ...CRYPTO_ASSISTANT_TOOLS,
 ]; 

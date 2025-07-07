@@ -5,7 +5,7 @@ import { TransactionHistory } from '../components/TransactionHistory';
 import { QuickActions } from '../components/QuickActions';
 import { useBackendWallet } from '../hooks/useBackendWallet';
 import { usePaymentLinks, PaymentLinkData } from '../hooks/usePaymentLinks';
-import { Wallet, Copy, ExternalLink, Trash2, Plus, RefreshCw, Filter, Link as LinkIcon } from 'lucide-react';
+import { Wallet, Copy, ExternalLink, Trash2, Plus, RefreshCw, Filter, Link as LinkIcon, History, Zap } from 'lucide-react';
 
 export const WalletPage = () => {
   const { backendWallet, loading } = useBackendWallet();
@@ -56,89 +56,73 @@ export const WalletPage = () => {
     }
   };
 
+  // Tab configuration with responsive icons and labels
+  const tabs = [
+    { id: 'overview', label: 'Portfolio', shortLabel: 'Portfolio', icon: Wallet },
+    { id: 'history', label: 'Transaction History', shortLabel: 'History', icon: History },
+    { id: 'actions', label: 'Quick Actions', shortLabel: 'Actions', icon: Zap },
+    { id: 'payment-links', label: 'Payment Links', shortLabel: 'Links', icon: LinkIcon },
+  ] as const;
+
   return (
     <div className="min-h-screen">
       <Header />
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Wallet Overview */}
-          <div className="lg:col-span-1">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6">
+          {/* Wallet Overview - Full width on mobile, left column on desktop */}
+          <div className="xl:col-span-1 order-1 xl:order-1">
             <WalletOverview walletAddress={backendWallet} />
           </div>
 
-          {/* Right Column - Main Interface */}
-          <div className="lg:col-span-2">
-            <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 shadow-2xl">
-              <div className="flex border-b border-white/10">
-                <button
-                  onClick={() => setActiveTab('overview')}
-                  className={`flex-1 py-4 px-6 text-sm font-medium transition-all ${
-                    activeTab === 'overview'
-                      ? 'text-white border-b-2 border-purple-500 bg-purple-500/10'
-                      : 'text-gray-300 hover:text-white hover:bg-white/5'
-                  }`}
-                >
-                  <div className="flex items-center justify-center space-x-2">
-                    <Wallet className="w-4 h-4" />
-                    <span>Portfolio</span>
-                  </div>
-                </button>
-                <button
-                  onClick={() => setActiveTab('history')}
-                  className={`flex-1 py-4 px-6 text-sm font-medium transition-all ${
-                    activeTab === 'history'
-                      ? 'text-white border-b-2 border-purple-500 bg-purple-500/10'
-                      : 'text-gray-300 hover:text-white hover:bg-white/5'
-                  }`}
-                >
-                  Transaction History
-                </button>
-                <button
-                  onClick={() => setActiveTab('actions')}
-                  className={`flex-1 py-4 px-6 text-sm font-medium transition-all ${
-                    activeTab === 'actions'
-                      ? 'text-white border-b-2 border-purple-500 bg-purple-500/10'
-                      : 'text-gray-300 hover:text-white hover:bg-white/5'
-                  }`}
-                >
-                  Quick Actions
-                </button>
-                <button
-                  onClick={() => setActiveTab('payment-links')}
-                  className={`flex-1 py-4 px-6 text-sm font-medium transition-all ${
-                    activeTab === 'payment-links'
-                      ? 'text-white border-b-2 border-purple-500 bg-purple-500/10'
-                      : 'text-gray-300 hover:text-white hover:bg-white/5'
-                  }`}
-                >
-                  <div className="flex items-center justify-center space-x-2">
-                    <LinkIcon className="w-4 h-4" />
-                    <span>Payment Links</span>
-                  </div>
-                </button>
+          {/* Main Interface - Full width on mobile, right column on desktop */}
+          <div className="xl:col-span-2 order-2 xl:order-2">
+            <div className="bg-white/10 backdrop-blur-lg rounded-lg sm:rounded-2xl border border-white/20 shadow-2xl">
+              {/* Responsive Tab Navigation */}
+              <div className="flex border-b border-white/10 overflow-x-auto scrollbar-hide">
+                {tabs.map((tab) => {
+                  const Icon = tab.icon;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`flex-1 min-w-0 py-3 sm:py-4 px-2 sm:px-4 text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
+                        activeTab === tab.id
+                          ? 'text-white border-b-2 border-purple-500 bg-purple-500/10'
+                          : 'text-gray-300 hover:text-white hover:bg-white/5'
+                      }`}
+                    >
+                      <div className="flex items-center justify-center space-x-1 sm:space-x-2">
+                        <Icon className="w-3 h-3 sm:w-4 sm:h-4" />
+                        <span className="hidden sm:inline">{tab.label}</span>
+                        <span className="sm:hidden">{tab.shortLabel}</span>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
 
-              <div className="p-6">
+              {/* Tab Content */}
+              <div className="p-3 sm:p-6">
                 {loading ? (
-                  <div className="text-center py-8">
-                    <Wallet className="w-12 h-12 text-purple-400 mx-auto mb-4 animate-pulse" />
-                    <p className="text-gray-400">Loading Oni wallet...</p>
+                  <div className="text-center py-6 sm:py-8">
+                    <Wallet className="w-8 h-8 sm:w-12 sm:h-12 text-purple-400 mx-auto mb-4 animate-pulse" />
+                    <p className="text-sm sm:text-base text-gray-400">Loading Oni wallet...</p>
                   </div>
                 ) : activeTab === 'overview' ? (
-                  <div className="text-center py-8">
-                    <Wallet className="w-12 h-12 text-purple-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-white mb-2">Wallet Overview</h3>
-                    <p className="text-gray-400">
-                      Your Oni wallet information is displayed in the left panel. Use the tabs above to view transaction history or perform quick actions.
+                  <div className="text-center py-6 sm:py-8">
+                    <Wallet className="w-8 h-8 sm:w-12 sm:h-12 text-purple-400 mx-auto mb-4" />
+                    <h3 className="text-base sm:text-lg font-medium text-white mb-2">Wallet Overview</h3>
+                    <p className="text-sm sm:text-base text-gray-400 px-2">
+                      Your Oni wallet information is displayed {window.innerWidth >= 1280 ? 'in the left panel' : 'above'}. Use the tabs to view transaction history or perform quick actions.
                     </p>
                   </div>
                 ) : activeTab === 'history' ? (
                   backendWallet ? (
                     <TransactionHistory walletAddress={backendWallet} />
                   ) : (
-                    <div className="text-center py-8">
-                      <Wallet className="w-12 h-12 text-purple-400 mx-auto mb-4 animate-pulse" />
-                      <p className="text-gray-400">Loading Oni wallet...</p>
+                    <div className="text-center py-6 sm:py-8">
+                      <Wallet className="w-8 h-8 sm:w-12 sm:h-12 text-purple-400 mx-auto mb-4 animate-pulse" />
+                      <p className="text-sm sm:text-base text-gray-400">Loading Oni wallet...</p>
                     </div>
                   )
                 ) : activeTab === 'payment-links' ? (
@@ -227,9 +211,9 @@ const PaymentLinksContent: React.FC<{
     const isGlobal = link.type === 'global';
     
     return (
-      <div className="bg-white/5 rounded-lg border border-white/10 p-4 backdrop-blur-sm">
+      <div className="bg-white/5 rounded-lg border border-white/10 p-3 sm:p-4 backdrop-blur-sm">
         <div className="flex justify-between items-start mb-3">
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 flex-wrap gap-1">
             <span className={`px-2 py-1 rounded-full text-xs font-medium ${
               isGlobal ? 'bg-purple-100/20 text-purple-300' : 'bg-blue-100/20 text-blue-300'
             }`}>
@@ -239,7 +223,7 @@ const PaymentLinksContent: React.FC<{
           </div>
           <button
             onClick={() => handleDelete(link.linkId)}
-            className="text-red-400 hover:text-red-300 transition-colors"
+            className="text-red-400 hover:text-red-300 transition-colors flex-shrink-0 p-1"
             title="Cancel Payment Link"
           >
             <Trash2 size={14} />
@@ -249,7 +233,7 @@ const PaymentLinksContent: React.FC<{
         <div className="space-y-2">
           <div>
             <p className="text-xs text-gray-400">Link ID</p>
-            <p className="font-mono text-sm text-white">{link.linkId}</p>
+            <p className="font-mono text-xs sm:text-sm text-white break-all">{link.linkId}</p>
           </div>
 
           {!isGlobal && (
@@ -274,7 +258,7 @@ const PaymentLinksContent: React.FC<{
           <div className="flex space-x-2 mt-3">
             <button
               onClick={() => copyToClipboard(link.shareableUrl, link.linkId)}
-              className="flex-1 flex items-center justify-center space-x-1 px-2 py-1 bg-white/10 text-white rounded hover:bg-white/20 transition-colors"
+              className="flex-1 flex items-center justify-center space-x-1 px-2 py-2 bg-white/10 text-white rounded hover:bg-white/20 transition-colors"
             >
               <Copy size={12} />
               <span className="text-xs">
@@ -285,7 +269,7 @@ const PaymentLinksContent: React.FC<{
               href={link.shareableUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center px-2 py-1 bg-purple-500/20 text-purple-300 rounded hover:bg-purple-500/30 transition-colors"
+              className="flex items-center justify-center px-3 py-2 bg-purple-500/20 text-purple-300 rounded hover:bg-purple-500/30 transition-colors"
             >
               <ExternalLink size={12} />
             </a>
@@ -297,48 +281,48 @@ const PaymentLinksContent: React.FC<{
 
   if (loading && paymentLinks.length === 0) {
     return (
-      <div className="text-center py-8">
-        <LinkIcon className="w-12 h-12 text-purple-400 mx-auto mb-4 animate-pulse" />
-        <p className="text-gray-400">Loading payment links...</p>
+      <div className="text-center py-6 sm:py-8">
+        <LinkIcon className="w-8 h-8 sm:w-12 sm:h-12 text-purple-400 mx-auto mb-4 animate-pulse" />
+        <p className="text-sm sm:text-base text-gray-400">Loading payment links...</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header with Refresh */}
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-medium text-white">My Payment Links</h3>
+        <h3 className="text-base sm:text-lg font-medium text-white">My Payment Links</h3>
         <button
           onClick={refresh}
-          className="flex items-center space-x-2 px-3 py-1 bg-purple-500/20 text-purple-300 rounded hover:bg-purple-500/30 transition-colors"
+          className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-1 bg-purple-500/20 text-purple-300 rounded hover:bg-purple-500/30 transition-colors"
           disabled={loading}
         >
           <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-          <span className="text-sm">Refresh</span>
+          <span className="text-xs sm:text-sm">Refresh</span>
         </button>
       </div>
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div className="bg-white/5 p-3 rounded-lg border border-white/10">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
+          <div className="bg-white/5 p-2 sm:p-3 rounded-lg border border-white/10">
             <p className="text-xs text-gray-400">Total Links</p>
-            <p className="text-lg font-bold text-white">{stats.totalLinks}</p>
+            <p className="text-base sm:text-lg font-bold text-white">{stats.totalLinks}</p>
           </div>
-          <div className="bg-white/5 p-3 rounded-lg border border-white/10">
+          <div className="bg-white/5 p-2 sm:p-3 rounded-lg border border-white/10">
             <p className="text-xs text-gray-400">Fixed Links</p>
-            <p className="text-lg font-bold text-blue-300">{stats.fixedLinks.count}</p>
+            <p className="text-base sm:text-lg font-bold text-blue-300">{stats.fixedLinks.count}</p>
             <p className="text-xs text-gray-500">{stats.fixedLinks.totalAmount} XFI</p>
           </div>
-          <div className="bg-white/5 p-3 rounded-lg border border-white/10">
+          <div className="bg-white/5 p-2 sm:p-3 rounded-lg border border-white/10">
             <p className="text-xs text-gray-400">Global Links</p>
-            <p className="text-lg font-bold text-purple-300">{stats.globalLinks.count}</p>
+            <p className="text-base sm:text-lg font-bold text-purple-300">{stats.globalLinks.count}</p>
             <p className="text-xs text-gray-500">{stats.globalLinks.totalContributions} XFI</p>
           </div>
-          <div className="bg-white/5 p-3 rounded-lg border border-white/10">
+          <div className="bg-white/5 p-2 sm:p-3 rounded-lg border border-white/10">
             <p className="text-xs text-gray-400">Active Links</p>
-            <p className="text-lg font-bold text-green-300">
+            <p className="text-base sm:text-lg font-bold text-green-300">
               {stats.fixedLinks.activeCount + stats.globalLinks.activeCount}
             </p>
           </div>
@@ -346,9 +330,11 @@ const PaymentLinksContent: React.FC<{
       )}
 
       {/* Filter Controls */}
-      <div className="flex items-center space-x-2">
-        <Filter size={14} className="text-gray-400" />
-        <span className="text-xs text-gray-400">Filter:</span>
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex items-center space-x-2">
+          <Filter size={14} className="text-gray-400" />
+          <span className="text-xs text-gray-400">Filter:</span>
+        </div>
         <div className="flex space-x-1">
           {['all', 'fixed', 'global'].map((filterType) => (
             <button
@@ -376,7 +362,7 @@ const PaymentLinksContent: React.FC<{
       {/* Payment Links Grid */}
       {paymentLinks.length > 0 ? (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
             {paymentLinks.map((link) => (
               <PaymentLinkCard key={link._id} link={link} />
             ))}
@@ -424,18 +410,18 @@ const PaymentLinksContent: React.FC<{
         </>
       ) : (
         !loading && (
-          <div className="text-center py-8">
-            <Plus size={32} className="mx-auto text-gray-400 mb-4" />
+          <div className="text-center py-6 sm:py-8">
+            <Plus size={24} className="mx-auto text-gray-400 mb-4" />
             <h4 className="text-sm font-medium text-white mb-2">No payment links found</h4>
-            <p className="text-xs text-gray-400 mb-4">
+            <p className="text-xs text-gray-400 mb-4 px-4">
               Create your first payment link to get started!
             </p>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-gray-500 px-4">
               Use the AI interface to create fixed or global payment links.
             </p>
           </div>
         )
       )}
-         </div>
-   );
- }; 
+    </div>
+  );
+}; 

@@ -10,6 +10,7 @@ import { Wallet as WalletType } from './types/wallet';
 import ErrorPage from './components/ErrorPage';
 import { LeaderboardPage } from './pages/LeaderboardPage';
 import { AIInterface } from './components/AIInterface';
+import { Footer } from './components/Footer';
 import oniLogo from './assets/logos.png';
 
 function App() {
@@ -62,18 +63,21 @@ function App() {
 
   return (
     <BackendProvider>
-        <div className="min-h-screen bg-main-gradient font-mono text-text">
+        <div className="min-h-screen bg-main-gradient font-mono text-text flex flex-col">
           <div className="absolute inset-0 opacity-20"></div>
           {/* <Header /> */}
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/wallet" element={<WalletPage />} />
-            <Route path="/ai" element={<AIInterface />} />
-            <Route path="/leaderboard" element={<LeaderboardPage />} />
-            <Route path="/paylink/:linkId" element={<PayLinkPage />} />
-            <Route path="/global-paylink/:linkId" element={<GlobalPayLinkPage />} />
-            <Route path="*" element={<ErrorPage />} />
-          </Routes>
+          <main className="flex-1 relative z-10">
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/wallet" element={<WalletPage />} />
+              <Route path="/ai" element={<AIInterface />} />
+              <Route path="/leaderboard" element={<LeaderboardPage />} />
+              <Route path="/paylink/:linkId" element={<PayLinkPage />} />
+              <Route path="/global-paylink/:linkId" element={<GlobalPayLinkPage />} />
+              <Route path="*" element={<ErrorPage />} />
+            </Routes>
+          </main>
+          <Footer />
         </div>
     </BackendProvider>
   );

@@ -7,11 +7,14 @@ import {
   MessagesAnnotation,
 } from "@langchain/langgraph";
 import { BaseMessage, type AIMessage } from "@langchain/core/messages";
-import { ChatOpenAI } from "@langchain/openai";
 import { ALL_TOOLS_LIST, setCurrentUserId } from "./tools.js";
+import { createLLM, printCostInfo, getCurrentProvider } from "./config/llm.js";
 import { config } from "dotenv";
 
 config();
+
+// Print cost information on startup
+printCostInfo();
 
 // Add userId to the graph state
 const GraphAnnotation = Annotation.Root({
@@ -19,10 +22,8 @@ const GraphAnnotation = Annotation.Root({
   userId: Annotation<string>(),
 });
 
-const llm = new ChatOpenAI({
-  model: "gpt-4",
-  temperature: 0,
-});
+// Use the new LLM configuration
+const llm = createLLM();
 
 const toolNode = new ToolNode(ALL_TOOLS_LIST);
 
@@ -32,23 +33,53 @@ const callModel = async (state: typeof GraphAnnotation.State) => {
   const systemMessage = {
     role: "system",
     content:
-      "You are a helpful AI assistant with access to blockchain wallet information and operations, plus gamification features. " +
-      "You have access to the following tools:\n" +
-      "1. get_wallet_info - Gets information about the user's wallet (address, chain ID, creation date)\n" +
-      "2. get_wallet_for_operations - Gets wallet info for blockchain operations (includes private key access)\n" +
-      "3. get_balance - Gets the balance of a wallet address\n" +
-      "4. send_transaction - Sends a transaction from the user's wallet to another address (awards points for successful transactions)\n" +
-      "5. get_transaction_history - Gets transaction history for a wallet address\n" +
-      "6. get_user_stats - Gets the user's gamification stats (points, rank, achievements)\n" +
-      "7. get_leaderboard - Gets the global leaderboard showing top users by points\n" +
-      "8. set_username - Set or update the user's public username (3-20 chars, alphanumeric or underscores, must be unique)\n" +
-      "9. create_global_payment_link - Creates a global payment link for the user\n" +
-      "10. create_payment_links - Creates a fixed payment link for a specified amount on the blockchain\n" +
-      "11. pay_fixed_payment_link - Pays a fixed payment link using the link ID\n" +
-      "\nFor payment links, when a user successfully creates one, provide them with the clickable payment URL that others can use to pay them.\n" +
-      "When helping users, be conversational and explain what you're doing. " +
-      "If someone asks about their wallet, gamification stats, or wants to send transactions, use the appropriate tools. " +
-      "Always format transaction hashes and addresses in a user-friendly way.",
+      "You are a comprehensive AI assistant specializing in the CrossFi blockchain ecosystem. You have access to wallet operations, gamification features, and comprehensive ecosystem analytics. " +
+      
+      "\n🔧 WALLET & TRANSACTION TOOLS:\n" +
+      "• get_wallet_info - Gets information about the user's wallet (address, chain ID, creation date)\n" +
+      "• get_wallet_for_operations - Gets wallet info for blockchain operations (includes private key access)\n" +
+      "• get_balance - Gets the balance of a wallet address\n" +
+      "• send_transaction - Sends a transaction from the user's wallet to another address (awards points for successful transactions)\n" +
+      "• get_transaction_history - Gets transaction history for a wallet address\n" +
+      
+      "\n🎮 GAMIFICATION TOOLS:\n" +
+      "• get_user_stats - Gets the user's gamification stats (points, rank, achievements)\n" +
+      "• get_leaderboard - Gets the global leaderboard showing top users by points\n" +
+      "• set_username - Set or update the user's public username (3-20 chars, alphanumeric or underscores, must be unique)\n" +
+      
+      "\n💳 PAYMENT LINK TOOLS:\n" +
+      "• create_global_payment_link - Creates a global payment link for the user\n" +
+      "• create_payment_links - Creates a fixed payment link for a specified amount on the blockchain\n" +
+      "• pay_fixed_payment_link - Pays a fixed payment link using the link ID\n" +
+      "• contribute_to_global_payment_link - Contribute to an existing global payment link\n" +
+      "• check_payment_link_status - Check the status of any payment link\n" +
+      
+      "\n📊 CROSSFI ECOSYSTEM INSIGHTS (CRYPTO ASSISTANT):\n" +
+      "• get_crossfi_network_stats - Real-time CrossFi network statistics (block height, network health, performance)\n" +
+      "• get_crossfi_ecosystem_insights - Comprehensive ecosystem analysis (network + transaction analytics + market data)\n" +
+      "• get_crossfi_transaction_analytics - Detailed transaction pattern analysis and network activity metrics\n" +
+      "• get_crossfi_market_data - XFI token market data including price, volume, and market cap (when available)\n" +
+      "• get_crossfi_defi_metrics - DeFi ecosystem metrics including TVL, active protocols, and yield opportunities\n" +
+      "• get_crossfi_ecosystem_summary - Executive summary of the entire CrossFi ecosystem with opportunities and risks\n" +
+      
+      "\n🎯 CRYPTO ASSISTANT CAPABILITIES:\n" +
+      "You are now equipped to provide comprehensive CrossFi ecosystem insights including:\n" +
+      "- Network performance and health monitoring\n" +
+      "- Transaction analytics and on-chain activity\n" +
+      "- Market data and price analysis\n" +
+      "- DeFi protocol tracking and opportunities\n" +
+      "- Ecosystem growth metrics and trends\n" +
+      "- Investment insights and risk assessment\n" +
+      
+      "\n💡 INTERACTION GUIDELINES:\n" +
+      "• Be conversational and explain what you're doing\n" +
+      "• When users ask about CrossFi ecosystem, market trends, or network status, use the crypto assistant tools\n" +
+      "• For payment links, provide clickable URLs that others can use to pay them\n" +
+      "• Format transaction hashes and addresses in a user-friendly way\n" +
+      "• Proactively offer ecosystem insights when relevant to user queries\n" +
+      "• Present data with emojis and clear formatting for better readability\n" +
+      
+      "\nYou're an expert in both technical blockchain operations AND market analysis - help users understand the CrossFi ecosystem comprehensively!",
   };
 
   const llmWithTools = llm.bindTools(ALL_TOOLS_LIST);
