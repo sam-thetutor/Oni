@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { HomePage } from './pages/HomePage';
 import { WalletPage } from './pages/WalletPage';
+import { PayLinkPage } from './pages/PayLinkPage';
 import { BackendProvider } from './context/BackendContext';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { Wallet as WalletType } from './types/wallet';
@@ -68,6 +69,7 @@ function App() {
             <Route path="/wallet" element={<WalletPage />} />
             <Route path="/ai" element={<AIInterface />} />
             <Route path="/leaderboard" element={<LeaderboardPage />} />
+            <Route path="/paylink/:linkId" element={<PayLinkPage />} />
             <Route path="*" element={<ErrorPage />} />
           </Routes>
         </div>

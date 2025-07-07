@@ -1,1 +1,1 @@
-export const PAYLINK_CONTRACT_ADDRESS = "0x64F72D3F5d7b3Db8D7c3a8742BE4Ea415834Dd24"; // Replace with actual contract address 
+export const PAYLINK_CONTRACT_ADDRESS = "0x03f0b9919B7A1341A17B15b2A2DA360d059Cc320"; // UPDATE: Replace with new XFI-compatible contract address 

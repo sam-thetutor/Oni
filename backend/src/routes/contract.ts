@@ -78,4 +78,5 @@ router.get('/check/:type/:linkId',
     contractController.checkLinkExists.bind(contractController)
 );
 
+
 export default router; 

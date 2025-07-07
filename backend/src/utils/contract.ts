@@ -14,7 +14,7 @@ import { ContractError, CONTRACT_ERRORS } from '../errors/contract.js';
 config();
 
 // Initialize provider
-const provider = new ethers.JsonRpcProvider(process.env.CROSSFI_TESTNET_RPC_URL);
+export const provider = new ethers.JsonRpcProvider(process.env.RPC_URL || 'https://rpc.testnet.ms');
 
 // Function to create a wallet from private key
 export function createWalletFromPrivateKey(privateKey: string): ethers.Wallet {

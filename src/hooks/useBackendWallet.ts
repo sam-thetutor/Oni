@@ -1,24 +1,48 @@
+import { usePrivy } from '@privy-io/react-auth';
 import { useEffect, useState } from 'react';
+
+
+interface BackendWalletResponse {
+  walletAddress: string;
+}
+
+
+
 
 export function useBackendWallet() {
   const [backendWallet, setBackendWallet] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const { user, authenticated, getAccessToken } = usePrivy();
+
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3030';
+
+
 
   useEffect(() => {
     async function fetchWallet() {
       setLoading(true);
+
       try {
-        const res = await fetch('/api/contract/wallet', { credentials: 'include' });
+        if (!authenticated || !user) {
+          throw new Error('User must be authenticated to access the API');
+        }
+        const accessToken = await getAccessToken();
+        const res = await fetch(`${BACKEND_URL}/api/user/wallet`, {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`  
+          }
+        });
         const data = await res.json();
         setBackendWallet(data.walletAddress);
       } catch (e) {
         setBackendWallet(null);
-      } finally {
+      } finally { 
         setLoading(false);
       }
-    }
+      } 
+    
     fetchWallet();
-  }, []);
+  }, [authenticated, user, getAccessToken]);
 
   return { backendWallet, loading };
 } 

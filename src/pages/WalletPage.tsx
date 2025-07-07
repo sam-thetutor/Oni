@@ -74,7 +74,14 @@ export const WalletPage = () => {
                     </p>
                   </div>
                 ) : activeTab === 'history' ? (
-                  <TransactionHistory />
+                  backendWallet ? (
+                    <TransactionHistory walletAddress={backendWallet} />
+                  ) : (
+                    <div className="text-center py-8">
+                      <Wallet className="w-12 h-12 text-purple-400 mx-auto mb-4 animate-pulse" />
+                      <p className="text-gray-400">Loading Oni wallet...</p>
+                    </div>
+                  )
                 ) : (
                   <QuickActions />
                 )}

@@ -19,7 +19,7 @@ export const LeaderboardPage: React.FC = () => {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch('/api/gamification/leaderboard');
+        const res = await fetch('http://localhost:3030/api/gamification/leaderboard');
         const data = await res.json();
         if (data.success) {
           setLeaderboard(data.leaderboard);

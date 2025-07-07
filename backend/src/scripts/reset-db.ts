@@ -16,8 +16,28 @@ async function resetUserCollection() {
     }
     
     console.log('🗑️ Dropping existing User collection...');
-    await db.dropCollection('users');
-    console.log('✅ User collection dropped successfully');
+    try {
+      await db.dropCollection('users');
+      console.log('✅ User collection dropped successfully');
+    } catch (error: any) {
+      if (error.code === 26) {
+        console.log('ℹ️  User collection does not exist, skipping...');
+      } else {
+        throw error;
+      }
+    }
+    
+    console.log('🗑️ Dropping existing PaymentLink collection...');
+    try {
+      await db.dropCollection('paymentlinks');
+      console.log('✅ PaymentLink collection dropped successfully');
+    } catch (error: any) {
+      if (error.code === 26) {
+        console.log('ℹ️  PaymentLink collection does not exist, skipping...');
+      } else {
+        throw error;
+      }
+    }
     
     console.log('🔄 Disconnecting from database...');
     await disconnectDB();

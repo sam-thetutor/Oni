@@ -4,6 +4,10 @@ import { WalletService } from "./services/wallet.js";
 import { BlockchainService } from "./services/blockchain.js";
 import { GamificationService } from "./services/gamification.js";
 import { User } from "./models/User.js";
+import { ContractService } from "./services/contract.js";
+import { PaymentLink } from "./models/PaymentLink.js";
+import { nanoid } from "nanoid";
+import { PaymentLinkService } from "./services/paymentlinks.js";
 
 // Global variable to store current user ID (set by the graph)
 let currentUserId: string | null = null;
@@ -463,6 +467,220 @@ class SetUsernameTool extends BaseTool {
   }
 }
 
+// Create Global Payment Link Tool
+class CreateGlobalPaymentLinkTool extends BaseTool {
+  name = "create_global_payment_link";
+  description = "Creates a global payment link for the user";
+  schema = z.object({});
+
+  protected async _call(input: z.infer<typeof this.schema>, runManager?: any): Promise<string> {
+    try {
+      const walletAddress = currentUserId;
+      if (!walletAddress) {
+        return JSON.stringify({ success: false, error: 'Wallet address not found. Please try again.' });
+      }
+      const user = await WalletService.getWalletByAddress(walletAddress);
+      if (!user) {
+        return JSON.stringify({ success: false, error: 'User wallet not found in database' });
+      }
+
+      const paymentLink = await PaymentLink.create({
+        linkId: nanoid(10),
+        userId: user.privyId,
+        amount: 0,
+        status: 'active',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+      return JSON.stringify({ success: true, paymentLink });
+
+
+
+
+
+    } catch (error: any) {
+      console.error('Error in create_global_payment_link:', error);
+      return JSON.stringify({ success: false, error: error.message });
+    }
+  }
+}
+
+// Create Payment Links Tool
+class CreatePaymentLinksTool extends BaseTool {
+  name = "create_payment_links";
+  description = "Creates a payment link for a specified amount on the blockchain";
+  schema = z.object({
+    amount: z.string().describe("The amount for the payment link in XFI (e.g., '0.1')")
+  });
+
+  protected async _call(input: z.infer<typeof this.schema>, runManager?: any): Promise<string> {
+    try {
+      const { amount } = input;
+      
+      // Get wallet address from global variable
+      const walletAddress = currentUserId;
+      
+      if (!walletAddress) {
+        return JSON.stringify({ 
+          success: false, 
+          error: 'Wallet address not found. Please try again.' 
+        });
+      }
+
+      // Get user from database
+      const user = await WalletService.getWalletByAddress(walletAddress);
+      
+      if (!user) {
+        return JSON.stringify({ 
+          success: false, 
+          error: 'User wallet not found in database' 
+        });
+      }
+
+      // Generate a unique linkID
+      const paymentLinkID = nanoid(10);
+
+      // Get wallet for operations (includes private key)
+      const walletForOps = await WalletService.getWalletForOperations(user.privyId);
+
+      if (!walletForOps) {
+        return JSON.stringify({ 
+          success: false, 
+          error: 'Failed to get wallet for operations' 
+        });
+      }
+
+      // Create payment link on blockchain
+      const transactionHash = await PaymentLinkService.createPaymentLinkOnChain(
+        walletForOps.privateKey, 
+        paymentLinkID, 
+        amount
+      );
+
+      // Create payment link in database
+      const paymentLink = await PaymentLinkService.createPaymentLink(
+        user.privyId, 
+        Number(amount), 
+        paymentLinkID
+      );
+
+      return JSON.stringify({
+        success: true,
+        linkID: paymentLinkID,
+        amount: paymentLink.amount,
+        status: paymentLink.status,
+        transactionHash: transactionHash,
+        paymentUrl: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/paylink/${paymentLinkID}`,
+        shareableLink: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/paylink/${paymentLinkID}`,
+        createdAt: paymentLink.createdAt,
+        updatedAt: paymentLink.updatedAt
+      });
+    } catch (error: any) {
+      console.error('Error in create_payment_links:', error);
+      return JSON.stringify({ 
+        success: false, 
+        error: error.message 
+      });
+    }
+  }
+}
+
+// Pay Fixed Payment Link Tool
+class PayFixedPaymentLinkTool extends BaseTool {
+  name = "pay_fixed_payment_link";
+  description = "Pays a fixed payment link using the link ID";
+  schema = z.object({
+    linkId: z.string().describe("The ID of the payment link to pay")
+  });
+
+  protected async _call(input: z.infer<typeof this.schema>, runManager?: any): Promise<string> {
+    try {
+      const { linkId } = input;
+      
+      // Get wallet address from global variable
+      const walletAddress = currentUserId;
+      
+      if (!walletAddress) {
+        return JSON.stringify({ 
+          success: false, 
+          error: 'Wallet address not found. Please try again.' 
+        });
+      }
+
+      // Get user from database
+      const user = await WalletService.getWalletByAddress(walletAddress);
+      
+      if (!user) {
+        return JSON.stringify({ 
+          success: false, 
+          error: 'User wallet not found in database' 
+        });
+      }
+
+      // Get payment link details
+      const paymentLink = await PaymentLink.findOne({ linkId });
+      
+      if (!paymentLink) {
+        return JSON.stringify({ 
+          success: false, 
+          error: 'Payment link not found' 
+        });
+      }
+
+      if (paymentLink.status !== 'active') {
+        return JSON.stringify({ 
+          success: false, 
+          error: 'Payment link is no longer active' 
+        });
+      }
+
+      // Get wallet for operations (includes private key)
+      const walletForOps = await WalletService.getWalletForOperations(user.privyId);
+
+      if (!walletForOps) {
+        return JSON.stringify({ 
+          success: false, 
+          error: 'Failed to get wallet for operations' 
+        });
+      }
+
+      // Use blockchain service to pay the payment link
+      const { ContractService } = await import('./services/contract.js');
+      const contractService = new ContractService(walletForOps.privateKey);
+      
+      const result = await contractService.payFixedPaymentLink(linkId, paymentLink.amount.toString());
+      
+      if (result.success) {
+        // Update payment link status to paid
+        paymentLink.status = 'paid';
+        await paymentLink.save();
+
+        return JSON.stringify({
+          success: true,
+          linkId: linkId,
+          amount: paymentLink.amount,
+          transactionHash: result.data.transactionHash,
+          message: `Successfully paid ${paymentLink.amount} XFI for payment link ${linkId}`
+        });
+      } else {
+        return JSON.stringify({ 
+          success: false, 
+          error: result.error || 'Failed to process payment' 
+        });
+      }
+
+    } catch (error: any) {
+      console.error('Error in pay_fixed_payment_link:', error);
+      return JSON.stringify({ 
+        success: false, 
+        error: error.message 
+      });
+    }
+  }
+}
+
+
+
 // Export tools list
 export const ALL_TOOLS_LIST = [
   new GetWalletInfoTool(),
@@ -473,4 +691,7 @@ export const ALL_TOOLS_LIST = [
   new GetUserStatsTool(),
   new GetLeaderboardTool(),
   new SetUsernameTool(),
+  new CreateGlobalPaymentLinkTool(),
+  new CreatePaymentLinksTool(),
+  new PayFixedPaymentLinkTool(),
 ]; 

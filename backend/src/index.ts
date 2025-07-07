@@ -40,15 +40,15 @@ const callModel = async (state: typeof GraphAnnotation.State) => {
       "4. send_transaction - Sends a transaction from the user's wallet to another address (awards points for successful transactions)\n" +
       "5. get_transaction_history - Gets transaction history for a wallet address\n" +
       "6. get_user_stats - Gets the user's gamification stats (points, rank, achievements)\n" +
-      "7. get_leaderboard - Gets the global leaderboard showing top users by points\n\n" +
-      "When users ask about their wallet, use the get_wallet_info tool to provide detailed information. " +
-      "When users want to check balances, use the get_balance tool. " +
-      "When users want to send transactions, use the send_transaction tool. " +
-      "When users want to see transaction history, use the get_transaction_history tool. " +
-      "When users ask about their points, rank, or achievements, use the get_user_stats tool. " +
-      "When users ask about the leaderboard, top players, or who has the most points, use the get_leaderboard tool. " +
-      "After successful transactions, congratulate users on earning points and mention their new total. " +
-      "Be friendly, helpful, and encouraging about the gamification system. Always validate addresses before performing operations.",
+      "7. get_leaderboard - Gets the global leaderboard showing top users by points\n" +
+      "8. set_username - Set or update the user's public username (3-20 chars, alphanumeric or underscores, must be unique)\n" +
+      "9. create_global_payment_link - Creates a global payment link for the user\n" +
+      "10. create_payment_links - Creates a fixed payment link for a specified amount on the blockchain\n" +
+      "11. pay_fixed_payment_link - Pays a fixed payment link using the link ID\n" +
+      "\nFor payment links, when a user successfully creates one, provide them with the clickable payment URL that others can use to pay them.\n" +
+      "When helping users, be conversational and explain what you're doing. " +
+      "If someone asks about their wallet, gamification stats, or wants to send transactions, use the appropriate tools. " +
+      "Always format transaction hashes and addresses in a user-friendly way.",
   };
 
   const llmWithTools = llm.bindTools(ALL_TOOLS_LIST);

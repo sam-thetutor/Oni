@@ -8,6 +8,7 @@ import { authenticateToken, requireWalletConnection } from "./middleware/auth.js
 import { connectDB } from "./db/connect.js";
 import contractRoutes from "./routes/contract.js";
 import gamificationRoutes from "./routes/gamification.js";
+import userWalletRoutes from "./routes/userWallet.js";
 
 config();
 
@@ -26,6 +27,11 @@ app.use('/api/contract', contractRoutes);
 
 // Gamification routes
 app.use('/api/gamification', gamificationRoutes);
+
+
+app.use('/api/user/wallet', userWalletRoutes);
+
+
 
 // Message route with authentication
 app.post("/message", 
