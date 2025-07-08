@@ -10,7 +10,7 @@ export interface WalletInfo {
 }
 
 export class WalletService {
-  private static readonly CHAIN_ID = parseInt(process.env.CHAIN_ID || '4517');
+  private static readonly CHAIN_ID = parseInt(process.env.CHAIN_ID || '4157');
 
   /**
    * Generate a random wallet for a user

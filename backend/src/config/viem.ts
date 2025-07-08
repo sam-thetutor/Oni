@@ -33,13 +33,13 @@ const crossfi = defineChain({
 });
 
 // Create public client for read-only operations
-export const publicClient: PublicClient = createPublicClient({
+export const publicClient = createPublicClient({
   chain: crossfi,
   transport: http(RPC_URL),
 });
 
   // Create wallet client factory for transactions
-  export function createWalletClientFromPrivateKey(privateKey: string): WalletClient {
+  export function createWalletClientFromPrivateKey(privateKey: string) {
     console.log('Creating wallet client from private key:', privateKey);
 
     // Decrypt the private key if it's encrypted
@@ -62,7 +62,7 @@ export const publicClient: PublicClient = createPublicClient({
 }
 
 // Helper function to get wallet client from user
-export async function getWalletClientFromUser(user: any): Promise<WalletClient | null> {
+export async function getWalletClientFromUser(user: any) {
   try {
     if (!user?.encryptedPrivateKey) {
       console.error('No encrypted private key found for user');

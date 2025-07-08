@@ -10,6 +10,27 @@ import { nanoid } from "nanoid";
 import { PaymentLinkService } from "./services/paymentlinks.js";
 import { ContractReadService } from "./services/contractread.js";
 import { CRYPTO_ASSISTANT_TOOLS } from "./tools/crypto-assistant.js";
+import { SwapService } from "./services/swap.js";
+
+// Import new price analysis tools
+import { 
+  XFIPriceChartTool,
+  XFIMarketDataTool,
+  XFITradingSignalsTool,
+  XFIPricePredictionTool,
+  XFIMarketComparisonTool
+} from './tools/price-analysis.js';
+
+// Import DCA tools
+import {
+  createDCAOrder,
+  getUserDCAOrders,
+  cancelDCAOrder,
+  getDCAOrderStatus,
+  getSwapQuote,
+  getDCASystemStatus,
+  getUserTokenBalances
+} from './tools/dca.js';
 
 // Global variable to store current user ID (set by the graph)
 let currentUserId: string | null = null;
@@ -906,7 +927,286 @@ class CheckPaymentLinkStatusTool extends StructuredTool {
   }
 }
 
+// DCA (Dollar Cost Averaging) Tools
 
+// Create DCA Order Tool
+class CreateDCAOrderTool extends StructuredTool {
+  name = "create_dca_order";
+  description = "Creates an automated DCA (Dollar Cost Averaging) order to buy or sell XFI when the price reaches a trigger condition. Users can say things like 'buy 10 tUSDC when XFI hits $0.05' or 'sell 5 XFI if price drops below $0.04'";
+  schema = z.object({
+    orderType: z.enum(["buy", "sell"]).describe("'buy' to buy XFI with tUSDC, 'sell' to sell XFI for tUSDC"),
+    amount: z.string().describe("Amount to swap (e.g., '10' for 10 tokens)"),
+    triggerPrice: z.number().describe("Price trigger in USD (e.g., 0.05 for $0.05)"),
+    triggerCondition: z.enum(["above", "below"]).describe("Execute when price goes 'above' or 'below' trigger"),
+    slippage: z.number().optional().describe("Maximum slippage percentage (default: 5%)"),
+    expirationDays: z.number().optional().describe("Order expiration in days (default: 30)")
+  }) as any;
+
+  protected async _call(input: z.infer<typeof this.schema>, runManager?: any): Promise<string> {
+    try {
+      const userId = currentUserId;
+      if (!userId) {
+        return JSON.stringify({ 
+          success: false, 
+          error: 'User not authenticated. Please try again.' 
+        }) as any;
+      }
+
+      const result = await createDCAOrder({
+        userId,
+        ...input
+      });
+
+      return JSON.stringify(result) as any;
+    } catch (error: any) {
+      console.error('Error in create_dca_order:', error);
+      return JSON.stringify({ 
+        success: false, 
+        error: error.message 
+      }) as any;
+    }
+  }
+}
+
+// Get User DCA Orders Tool
+class GetUserDCAOrdersTool extends StructuredTool {
+  name = "get_user_dca_orders";
+  description = "Lists the user's DCA orders with their current status. Can filter by status (active, executed, cancelled, failed, expired)";
+  schema = z.object({
+    status: z.enum(["active", "executed", "cancelled", "failed", "expired"]).optional().describe("Filter by order status"),
+    limit: z.number().optional().describe("Maximum number of orders to return (default: 10)")
+  }) as any;
+
+  protected async _call(input: z.infer<typeof this.schema>, runManager?: any): Promise<string> {
+    try {
+      const userId = currentUserId;
+      if (!userId) {
+        return JSON.stringify({ 
+          success: false, 
+          error: 'User not authenticated. Please try again.' 
+        }) as any;
+      }
+
+      const result = await getUserDCAOrders({
+        userId,
+        ...input
+      });
+
+      return JSON.stringify(result) as any;
+    } catch (error: any) {
+      console.error('Error in get_user_dca_orders:', error);
+      return JSON.stringify({ 
+        success: false, 
+        error: error.message 
+      }) as any;
+    }
+  }
+}
+
+// Cancel DCA Order Tool
+class CancelDCAOrderTool extends StructuredTool {
+  name = "cancel_dca_order";
+  description = "Cancels an active DCA order by order ID";
+  schema = z.object({
+    orderId: z.string().describe("The ID of the DCA order to cancel")
+  }) as any;
+
+  protected async _call(input: z.infer<typeof this.schema>, runManager?: any): Promise<string> {
+    try {
+      const userId = currentUserId;
+      if (!userId) {
+        return JSON.stringify({ 
+          success: false, 
+          error: 'User not authenticated. Please try again.' 
+        }) as any;
+      }
+
+      const result = await cancelDCAOrder({
+        userId,
+        ...input
+      });
+
+      return JSON.stringify(result) as any;
+    } catch (error: any) {
+      console.error('Error in cancel_dca_order:', error);
+      return JSON.stringify({ 
+        success: false, 
+        error: error.message 
+      }) as any;
+    }
+  }
+}
+
+// Get DCA Order Status Tool
+class GetDCAOrderStatusTool extends StructuredTool {
+  name = "get_dca_order_status";
+  description = "Gets detailed status information for a specific DCA order";
+  schema = z.object({
+    orderId: z.string().describe("The ID of the DCA order to check")
+  }) as any;
+
+  protected async _call(input: z.infer<typeof this.schema>, runManager?: any): Promise<string> {
+    try {
+      const userId = currentUserId;
+      if (!userId) {
+        return JSON.stringify({ 
+          success: false, 
+          error: 'User not authenticated. Please try again.' 
+        }) as any;
+      }
+
+      const result = await getDCAOrderStatus({
+        userId,
+        ...input
+      });
+
+      return JSON.stringify(result) as any;
+    } catch (error: any) {
+      console.error('Error in get_dca_order_status:', error);
+      return JSON.stringify({ 
+        success: false, 
+        error: error.message 
+      }) as any;
+    }
+  }
+}
+
+// Get Swap Quote Tool
+class GetSwapQuoteTool extends StructuredTool {
+  name = "get_swap_quote";
+  description = "Gets a quote for an immediate token swap between XFI and tUSDC";
+  schema = z.object({
+    fromToken: z.enum(["XFI", "tUSDC"]).describe("Token to swap from"),
+    toToken: z.enum(["XFI", "tUSDC"]).describe("Token to swap to"),
+    amount: z.string().describe("Amount to swap"),
+    slippage: z.number().optional().describe("Maximum slippage percentage (default: 5%)")
+  }) as any;
+
+  protected async _call(input: z.infer<typeof this.schema>, runManager?: any): Promise<string> {
+    try {
+      const result = await getSwapQuote(input);
+      return JSON.stringify(result) as any;
+    } catch (error: any) {
+      console.error('Error in get_swap_quote:', error);
+      return JSON.stringify({ 
+        success: false, 
+        error: error.message 
+      }) as any;
+    }
+  }
+}
+
+// Get DCA System Status Tool
+class GetDCASystemStatusTool extends StructuredTool {
+  name = "get_dca_system_status";
+  description = "Gets the current status of the DCA monitoring and execution system";
+  schema = z.object({}) as any;
+
+  protected async _call(input: z.infer<typeof this.schema>, runManager?: any): Promise<string> {
+    try {
+      const result = await getDCASystemStatus();
+      return JSON.stringify(result) as any;
+    } catch (error: any) {
+      console.error('Error in get_dca_system_status:', error);
+      return JSON.stringify({ 
+        success: false, 
+        error: error.message 
+      }) as any;
+    }
+  }
+}
+
+// Get User Token Balances Tool
+class GetUserTokenBalancesTool extends StructuredTool {
+  name = "get_user_token_balances";
+  description = "Gets the user's current balances for DCA-supported tokens (XFI and tUSDC)";
+  schema = z.object({}) as any;
+
+  protected async _call(input: z.infer<typeof this.schema>, runManager?: any): Promise<string> {
+    try {
+      const userId = currentUserId;
+      if (!userId) {
+        return JSON.stringify({ 
+          success: false, 
+          error: 'User not authenticated. Please try again.' 
+        }) as any;
+      }
+
+      const result = await getUserTokenBalances({ userId });
+      return JSON.stringify(result) as any;
+    } catch (error: any) {
+      console.error('Error in get_user_token_balances:', error);
+      return JSON.stringify({ 
+        success: false, 
+        error: error.message 
+      }) as any;
+    }
+  }
+}
+
+// Add Liquidity Tool
+class AddLiquidityTool extends StructuredTool {
+  name = "add_liquidity";
+  description = "Adds liquidity to the XFI/tUSDC swap pool. Both XFI and tUSDC amounts are required to maintain the pool balance.";
+  schema = z.object({
+    xfiAmount: z.string().describe("Amount of XFI to add to the pool"),
+    tUSDCAmount: z.string().describe("Amount of tUSDC to add to the pool"),
+    slippage: z.number().optional().describe("Maximum slippage percentage (default: 5%)")
+  }) as any;
+
+  protected async _call(input: z.infer<typeof this.schema>, runManager?: any): Promise<string> {
+    try {
+      const userId = currentUserId;
+      if (!userId) {
+        return JSON.stringify({ 
+          success: false, 
+          error: 'User not authenticated. Please try again.' 
+        }) as any;
+      }
+
+      // Get user from database
+      const user = await WalletService.getWalletByAddress(userId);
+      if (!user) {
+        return JSON.stringify({ 
+          success: false, 
+          error: 'User wallet not found in database' 
+        }) as any;
+      }
+
+      const { xfiAmount, tUSDCAmount, slippage = 5 } = input;
+      
+      // Add liquidity using SwapService
+      const result = await SwapService.addLiquidity(
+        user,
+        xfiAmount,
+        tUSDCAmount,
+        slippage
+      );
+
+      if (result.success) {
+        return JSON.stringify({
+          success: true,
+          message: `✅ Successfully added ${xfiAmount} XFI + ${tUSDCAmount} tUSDC to the liquidity pool!`,
+          transactionHash: result.transactionHash,
+          xfiAmount,
+          tUSDCAmount,
+          slippage
+        }) as any;
+      } else {
+        return JSON.stringify({
+          success: false,
+          error: result.error || 'Failed to add liquidity'
+        }) as any;
+      }
+    } catch (error: any) {
+      console.error('Error in add_liquidity:', error);
+      return JSON.stringify({ 
+        success: false, 
+        error: error.message 
+      }) as any;
+    }
+  }
+}
 
 // Export tools list
 export const ALL_TOOLS_LIST = [
@@ -931,4 +1231,23 @@ export const ALL_TOOLS_LIST = [
   
   // Crypto Assistant Tools - CrossFi Ecosystem Insights
   ...CRYPTO_ASSISTANT_TOOLS,
+
+  // XFI Price Analysis Tools
+  XFIPriceChartTool,
+  XFIMarketDataTool,
+  XFITradingSignalsTool,
+  XFIPricePredictionTool,
+  XFIMarketComparisonTool,
+
+  // DCA (Dollar Cost Averaging) Tools
+  new CreateDCAOrderTool(),
+  new GetUserDCAOrdersTool(),
+  new CancelDCAOrderTool(),
+  new GetDCAOrderStatusTool(),
+  new GetSwapQuoteTool(),
+  new GetDCASystemStatusTool(),
+  new GetUserTokenBalancesTool(),
+  
+  // Liquidity Tools
+  new AddLiquidityTool(),
 ]; 

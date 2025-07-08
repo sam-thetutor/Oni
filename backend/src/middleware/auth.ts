@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { PrivyService, PrivyUser } from '../services/privy.js';
 import { WalletService } from '../services/wallet.js';
 
-interface AuthenticatedRequest extends Request {
+export interface AuthenticatedRequest extends Request {
   user?: {
     id: string;
     walletAddress: string;
