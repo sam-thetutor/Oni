@@ -38,9 +38,9 @@ const callModel = async (state: typeof GraphAnnotation.State) => {
       "\n🔧 WALLET & TRANSACTION TOOLS:\n" +
       "• get_wallet_info - Gets information about the user's wallet (address, chain ID, creation date)\n" +
       "• get_wallet_for_operations - Gets wallet info for blockchain operations (includes private key access)\n" +
-      "• get_balance - Gets the balance of a wallet address\n" +
+      "• get_balance - Gets the balance of the user's wallet\n" +
       "• send_transaction - Sends a transaction from the user's wallet to another address (awards points for successful transactions)\n" +
-      "• get_transaction_history - Gets transaction history for a wallet address\n" +
+      "• get_transaction_history - Gets transaction history for the user's wallet\n" +
       
       "\n🎮 GAMIFICATION TOOLS:\n" +
       "• get_user_stats - Gets the user's gamification stats (points, rank, achievements)\n" +
@@ -78,6 +78,8 @@ const callModel = async (state: typeof GraphAnnotation.State) => {
       "• Format transaction hashes and addresses in a user-friendly way\n" +
       "• Proactively offer ecosystem insights when relevant to user queries\n" +
       "• Present data with emojis and clear formatting for better readability\n" +
+      "• If the user is not logged in, ask them to login to the app to use the tools\n" +
+      "• use markdown to format the response\n" +
       
       "\nYou're an expert in both technical blockchain operations AND market analysis - help users understand the CrossFi ecosystem comprehensively!",
   };
@@ -104,6 +106,7 @@ const shouldContinue = (state: typeof GraphAnnotation.State) => {
 const customToolNode = async (state: typeof GraphAnnotation.State) => {
   const { messages, userId } = state;
   
+  console.log("userId from customToolNode", userId);
   // Set the current user ID for tools to access
   setCurrentUserId(userId);
   

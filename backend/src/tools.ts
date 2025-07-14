@@ -37,6 +37,7 @@ let currentUserId: string | null = null;
 
 // Function to set current user ID (called by the graph)
 export const setCurrentUserId = (userId: string) => {
+  console.log('Setting currentUserId to:', userId);
   currentUserId = userId;
 };
 
@@ -151,23 +152,32 @@ class GetWalletForOperationsTool extends StructuredTool {
 // Get Balance Tool
 class GetBalanceTool extends StructuredTool {
   name = "get_balance";
-  description = "Gets the balance of a wallet address";
-  schema = z.object({
-    address: z.string().describe("The wallet address to get balance for")
-  }) as any;
+  description = "Gets the balance of the user's wallet";
+  schema = z.object({}) as any;
 
   protected async _call(input: z.infer<typeof this.schema>, runManager?: any): Promise<string> {
     try {
-      const { address } = input;
+      // Get wallet address from global variable (user's wallet address from database)
+      const walletAddress = currentUserId;
       
-      if (!BlockchainService.isValidAddress(address)) {
+      console.log('GetBalanceTool - Current wallet address:', currentUserId);
+      console.log('GetBalanceTool - walletAddress variable:', walletAddress);
+      
+      if (!walletAddress) {
+        return JSON.stringify({ 
+          success: false, 
+          error: 'Wallet address not found. Please try again.' 
+        }) as any;
+      }
+
+      if (!BlockchainService.isValidAddress(walletAddress)) {
         return JSON.stringify({ 
           success: false, 
           error: 'Invalid wallet address format' 
         }) as any;
       }
 
-      const balance = await BlockchainService.getBalance(address);
+      const balance = await BlockchainService.getBalance(walletAddress);
       
       return JSON.stringify({
         success: true,
@@ -257,28 +267,37 @@ class SendTransactionTool extends StructuredTool {
 // Get Transaction History Tool
 class GetTransactionHistoryTool extends StructuredTool {
   name = "get_transaction_history";
-  description = "Gets transaction history for a wallet address";
+  description = "Gets transaction history for the user's wallet";
   schema = z.object({
-    address: z.string().describe("The wallet address to get transaction history for"),
     limit: z.number().optional().describe("Number of transactions to return (default: 10)")
   }) as any;
 
   protected async _call(input: z.infer<typeof this.schema>, runManager?: any): Promise<string> {
     try {
-      const { address, limit = 10 } = input;
+      const { limit = 10 } = input;
       
-      if (!BlockchainService.isValidAddress(address)) {
+      // Get wallet address from global variable (user's wallet address from database)
+      const walletAddress = currentUserId;
+      
+      if (!walletAddress) {
+        return JSON.stringify({ 
+          success: false, 
+          error: 'Wallet address not found. Please try again.' 
+        }) as any;
+      }
+
+      if (!BlockchainService.isValidAddress(walletAddress)) {
         return JSON.stringify({ 
           success: false, 
           error: 'Invalid wallet address format' 
         }) as any;
       }
 
-      const transactions = await BlockchainService.getTransactionHistory(address, limit);
+      const transactions = await BlockchainService.getTransactionHistory(walletAddress, limit);
       
       return JSON.stringify({
         success: true,
-        address,
+        address: walletAddress,
         transactions: transactions.map(tx => ({
           hash: tx.hash,
           from: tx.from,

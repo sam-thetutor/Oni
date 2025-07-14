@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Send, Bot, User, Loader2 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import { useBackendContext } from '../context/BackendContext';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import oniLogo from '../assets/logos.png';
@@ -124,7 +125,36 @@ export const TestModal: React.FC<TestModalProps> = ({ isOpen, onClose }) => {
                       : 'bg-gray-800/50 text-gray-200'
                   }`}
                 >
-                  <p className="whitespace-pre-wrap text-sm sm:text-base break-words">{message.content}</p>
+                  {message.type === 'ai' ? (
+                    <div className="prose prose-invert prose-sm max-w-none">
+                      <ReactMarkdown
+                        components={{
+                          // Customize markdown components for better styling
+                          p: ({ children }) => <p className="mb-2 last:mb-0 text-sm sm:text-base">{children}</p>,
+                          strong: ({ children }) => <strong className="font-bold text-white">{children}</strong>,
+                          em: ({ children }) => <em className="italic text-gray-300">{children}</em>,
+                          code: ({ children }) => <code className="bg-gray-700 px-1 py-0.5 rounded text-xs sm:text-sm font-mono text-green-400">{children}</code>,
+                          pre: ({ children }) => <pre className="bg-gray-700 p-2 rounded text-xs sm:text-sm font-mono text-green-400 overflow-x-auto mb-2">{children}</pre>,
+                          ul: ({ children }) => <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>,
+                          ol: ({ children }) => <ol className="list-decimal list-inside mb-2 space-y-1">{children}</ol>,
+                          li: ({ children }) => <li className="text-gray-200 text-sm sm:text-base">{children}</li>,
+                          a: ({ href, children }) => (
+                            <a href={href} className="text-blue-400 hover:text-blue-300 underline" target="_blank" rel="noopener noreferrer">
+                              {children}
+                            </a>
+                          ),
+                          h1: ({ children }) => <h1 className="text-lg sm:text-xl font-bold text-white mb-2">{children}</h1>,
+                          h2: ({ children }) => <h2 className="text-base sm:text-lg font-bold text-white mb-2">{children}</h2>,
+                          h3: ({ children }) => <h3 className="text-sm sm:text-base font-bold text-white mb-2">{children}</h3>,
+                          blockquote: ({ children }) => <blockquote className="border-l-4 border-gray-600 pl-4 italic text-gray-300 mb-2">{children}</blockquote>,
+                        }}
+                      >
+                        {message.content}
+                      </ReactMarkdown>
+                    </div>
+                  ) : (
+                    <p className="whitespace-pre-wrap text-sm sm:text-base break-words">{message.content}</p>
+                  )}
                   <p className="text-xs text-gray-500 mt-1 sm:mt-2">
                     {message.timestamp.toLocaleTimeString()}
                   </p>

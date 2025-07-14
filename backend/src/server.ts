@@ -49,7 +49,7 @@ app.get('/test', (req, res) => {
     message: 'Backend API is working!',
     timestamp: new Date().toISOString()
   });
-});
+}); 
 
 
 // API routes
@@ -67,8 +67,6 @@ app.post('/message', authenticateToken, requireWalletConnection, async (req: Aut
 
     console.log(`Processing message from user ${user.id}: ${message}`);
 
-    // Set current user ID for the graph
-    setCurrentUserId(user.walletAddress);
     console.log("user connectred waller :",user)
 
     // Add user message to memory
@@ -77,9 +75,10 @@ app.post('/message', authenticateToken, requireWalletConnection, async (req: Aut
     // Get conversation history
     const history = memoryStore.getHistory(user.id);
 
-    // Run the graph
+    // Run the graph with user ID in state
     const result = await graph.invoke({
       messages: history,
+      userId: user.walletAddress, // Pass user ID to graph state
     });
 
     // Add AI response to memory
