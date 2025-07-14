@@ -32,6 +32,8 @@
     "node_modules",
     "dist",
     "**/*.test.ts",
-    "**/*.spec.ts"
+    "**/*.spec.ts",
+    "src/utils/encryption.ts",
+    "src/utils/session.ts"
   ]
 } 

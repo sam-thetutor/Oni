@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useWallets } from '@privy-io/react-auth';
 import { createWalletClient, custom, parseEther, formatEther } from 'viem';
 import { defineChain } from 'viem';
+import { BACKEND_URL } from '../utils/constants';
 
 // Define CrossFI testnet chain
 const crossfiTestnet = defineChain({
@@ -170,7 +171,7 @@ export const useContractPayment = () => {
       // For now, we'll rely on the backend API to get payment link details
       // In a full implementation, you could also read directly from the contract
       
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3030'}/api/user/wallet/paylink/${linkId}`);
+      const response = await fetch(`${BACKEND_URL}/api/user/wallet/paylink/${linkId}`);
       const result = await response.json();
       
       if (result.success) {

@@ -101,6 +101,7 @@ class GetWalletForOperationsTool extends StructuredTool {
       // Get wallet address from global variable
       const walletAddress = currentUserId;
       
+      
       if (!walletAddress) {
         return JSON.stringify({ 
           success: false, 

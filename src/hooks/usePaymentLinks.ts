@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useBackend } from './useBackend';
-
+import { BACKEND_URL } from '../utils/constants';
 export interface PaymentLinkData {
   _id: string;
   linkId: string;
@@ -102,8 +102,9 @@ export const usePaymentLinks = () => {
         type: type
       });
 
-      const response = await authFetch(`/api/user/payment-links?${params}`);
+      const response = await authFetch(`${BACKEND_URL}/api/user/payment-links?${params}`);
       const data: PaymentLinksResponse = await response.json();
+      console.log("data", data);
 
       if (data.success) {
         setPaymentLinks(data.data.paymentLinks);

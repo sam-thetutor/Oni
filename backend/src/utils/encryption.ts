@@ -7,20 +7,45 @@ const TAG_LENGTH = 16;
 const KEY_LENGTH = 32;
 const ITERATIONS = 100000;
 
+const textEncoder = new TextEncoder();
+const textDecoder = new TextDecoder();
+
+// Helper function to convert Uint8Array to hex string
+function uint8ArrayToHex(bytes: Uint8Array): string {
+  return Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
+}
+
+// Helper function to convert hex string to Uint8Array
+function hexToUint8Array(hex: string): Uint8Array {
+  const bytes = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < hex.length; i += 2) {
+    bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
+  }
+  return bytes;
+}
+
+// Helper function to convert Buffer to Uint8Array
+function bufferToUint8Array(buffer: Buffer): Uint8Array {
+  return new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+}
+
 export class EncryptionService {
   /**
    * Encrypt a private key
    */
   static encryptPrivateKey(privateKey: string, password: string): string {
     try {
-      // Generate a random salt
-      const salt = crypto.randomBytes(SALT_LENGTH);
+      // Generate a random salt and convert to Uint8Array
+      const saltBuffer = crypto.randomBytes(SALT_LENGTH);
+      const salt = bufferToUint8Array(saltBuffer);
       
-      // Derive key from password using PBKDF2
-      const key = crypto.pbkdf2Sync(password, salt, ITERATIONS, KEY_LENGTH, 'sha512');
+      // Derive key from password using PBKDF2 and convert to Uint8Array
+      const keyBuffer = crypto.pbkdf2Sync(password, salt, ITERATIONS, KEY_LENGTH, 'sha512');
+      const key = bufferToUint8Array(keyBuffer);
       
-      // Generate a random IV
-      const iv = crypto.randomBytes(IV_LENGTH);
+      // Generate a random IV and convert to Uint8Array
+      const ivBuffer = crypto.randomBytes(IV_LENGTH);
+      const iv = bufferToUint8Array(ivBuffer);
       
       // Create cipher
       const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
@@ -30,11 +55,16 @@ export class EncryptionService {
       let encrypted = cipher.update(privateKey, 'utf8', 'hex');
       encrypted += cipher.final('hex');
       
-      // Get the auth tag
-      const tag = cipher.getAuthTag();
+      // Get the auth tag and convert to Uint8Array
+      const tagBuffer = cipher.getAuthTag();
+      const tag = bufferToUint8Array(tagBuffer);
       
-      // Combine salt + iv + tag + encrypted data
-      const result = salt.toString('hex') + ':' + iv.toString('hex') + ':' + tag.toString('hex') + ':' + encrypted;
+      // Combine salt + iv + tag + encrypted data using Uint8Array
+      const saltHex = uint8ArrayToHex(salt);
+      const ivHex = uint8ArrayToHex(iv);
+      const tagHex = uint8ArrayToHex(tag);
+      
+      const result = saltHex + ':' + ivHex + ':' + tagHex + ':' + encrypted;
       
       return result;
     } catch (error) {
@@ -56,13 +86,14 @@ export class EncryptionService {
       
       const [saltHex, ivHex, tagHex, encrypted] = parts;
       
-      // Convert hex strings back to buffers
-      const salt = Buffer.from(saltHex, 'hex');
-      const iv = Buffer.from(ivHex, 'hex');
-      const tag = Buffer.from(tagHex, 'hex');
+      // Convert hex strings back to Uint8Array
+      const salt = hexToUint8Array(saltHex);
+      const iv = hexToUint8Array(ivHex);
+      const tag = hexToUint8Array(tagHex);
       
-      // Derive key from password using PBKDF2
-      const key = crypto.pbkdf2Sync(password, salt, ITERATIONS, KEY_LENGTH, 'sha512');
+      // Derive key from password using PBKDF2 and convert to Uint8Array
+      const keyBuffer = crypto.pbkdf2Sync(password, salt, ITERATIONS, KEY_LENGTH, 'sha512');
+      const key = bufferToUint8Array(keyBuffer);
       
       // Create decipher
       const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);

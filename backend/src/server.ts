@@ -4,7 +4,7 @@ import { config } from "dotenv";
 import { graph } from "./index.js";
 import { HumanMessage, AIMessage } from "@langchain/core/messages";
 import { memoryStore } from "./memory.js";
-import { authenticateToken, requireWalletConnection } from "./middleware/auth.js";
+import { authenticateToken, requireWalletConnection, AuthenticatedRequest } from "./middleware/auth.js";
 import { connectDB } from "./db/connect.js";
 import { contractRoutes } from "./routes/contract.js";
 import gamificationRoutes from "./routes/gamification.js";
@@ -15,6 +15,7 @@ import dcaRoutes from "./routes/dca.js";
 import { PriceCacheService } from "./services/price-cache.js";
 import { DCAExecutorService } from "./services/dca-executor.js";
 import { setCurrentUserId } from "./tools.js";
+import {setUserContext} from "./middleware/setUserContext.js"
 
 config();
 
@@ -23,10 +24,8 @@ const PORT = process.env.PORT || 3030;
 
 // CORS configuration for production
 const corsOptions = {
-  origin: process.env.NODE_ENV === 'production' 
-    ? [process.env.FRONTEND_URL || 'https://your-frontend-domain.vercel.app']
-    : ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:3000'],
-  credentials: true,
+  origin: ["http://localhost:5173"],
+  credentials: false,
   optionsSuccessStatus: 200
 };
 
@@ -39,20 +38,29 @@ app.get('/health', (req, res) => {
   res.json({ 
     status: 'healthy', 
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
+    environment: process.env.NODE_ENV || 'development',
+    message: 'Backend is running successfully!'
   });
 });
 
-// API routes
-app.use('/api/contract', contractRoutes);
-app.use('/api/gamification', gamificationRoutes);
-app.use('/api/user/wallet', userWalletRoutes);
-app.use('/api/user/payment-links', userPaymentLinksRoutes);
-app.use('/api/price-data', priceDataRoutes);
-app.use('/api/dca', dcaRoutes);
+// Simple test endpoint
+app.get('/test', (req, res) => {
+  res.json({ 
+    message: 'Backend API is working!',
+    timestamp: new Date().toISOString()
+  });
+});
 
+
+// API routes
+app.use('/api/contract', authenticateToken, setUserContext, contractRoutes);
+app.use('/api/gamification', setUserContext, gamificationRoutes);
+app.use('/api/user/wallet', authenticateToken, setUserContext, userWalletRoutes);
+app.use('/api/user/payment-links', authenticateToken, setUserContext, userPaymentLinksRoutes);
+app.use('/api/price-data', authenticateToken, setUserContext, priceDataRoutes);
+app.use('/api/dca', authenticateToken, setUserContext, dcaRoutes);
 // Main message endpoint
-app.post('/message', authenticateToken, requireWalletConnection, async (req, res) => {
+app.post('/message', authenticateToken, requireWalletConnection, async (req: AuthenticatedRequest, res) => {
   try {
     const { message } = req.body;
     const user = req.user!;
@@ -61,6 +69,7 @@ app.post('/message', authenticateToken, requireWalletConnection, async (req, res
 
     // Set current user ID for the graph
     setCurrentUserId(user.walletAddress);
+    console.log("user connectred waller :",user)
 
     // Add user message to memory
     memoryStore.addMessage(user.id, new HumanMessage(message));
@@ -114,16 +123,24 @@ app.use('*', (req, res) => {
 // Start server
 const startServer = async () => {
   try {
-    // Connect to database
-    await connectDB();
-    console.log('✅ Connected to MongoDB');
+    // Try to connect to database (but don't fail if it's not available)
+    try {
+      await connectDB();
+      console.log('✅ Connected to MongoDB');
+    } catch (dbError) {
+      console.warn('⚠️ Database connection failed (continuing without DB):', dbError);
+    }
 
     // Initialize services (PriceCacheService doesn't need initialization)
     console.log('✅ Price cache service ready');
 
-    // Start DCA executor
-    DCAExecutorService.startExecutor();
-    console.log('✅ DCA executor service started');
+    // Try to start DCA executor (but don't fail if it's not available)
+    try {
+      DCAExecutorService.startExecutor();
+      console.log('✅ DCA executor service started');
+    } catch (dcaError) {
+      console.warn('⚠️ DCA executor failed to start (continuing without DCA):', dcaError);
+    }
 
     // Start server
     app.listen(PORT, () => {

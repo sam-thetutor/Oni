@@ -9,7 +9,6 @@ import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { Wallet as WalletType } from './types/wallet';
 import ErrorPage from './components/ErrorPage';
 import { LeaderboardPage } from './pages/LeaderboardPage';
-import { PriceAnalysisPage } from './pages/PriceAnalysisPage';
 import { AIInterface } from './components/AIInterface';
 import { Footer } from './components/Footer';
 import oniLogo from './assets/logos.png';
@@ -73,7 +72,6 @@ function App() {
             <Route path="/wallet" element={<WalletPage />} />
             <Route path="/ai" element={<AIInterface />} />
             <Route path="/leaderboard" element={<LeaderboardPage />} />
-            <Route path="/price-analysis" element={<PriceAnalysisPage />} />
             <Route path="/paylink/:linkId" element={<PayLinkPage />} />
             <Route path="/global-paylink/:linkId" element={<GlobalPayLinkPage />} />
             <Route path="*" element={<ErrorPage />} />

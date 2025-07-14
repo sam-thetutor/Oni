@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useBackend } from './useBackend';
+import { BACKEND_URL } from '../utils/constants';
 
 export interface DCAOrder {
   _id: string;
@@ -94,7 +95,7 @@ export const useDCAOrders = () => {
         params.append('status', status);
       }
       
-      const response = await authFetch(`/api/dca/orders?${params}`, {
+      const response = await authFetch(`${BACKEND_URL}/api/dca/orders?${params}`, {
         method: 'GET'
       });
       

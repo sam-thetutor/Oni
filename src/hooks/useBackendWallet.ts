@@ -1,5 +1,6 @@
 import { usePrivy } from '@privy-io/react-auth';
 import { useEffect, useState } from 'react';
+import { BACKEND_URL } from '../utils/constants';
 
 
 interface BackendWalletResponse {
@@ -14,7 +15,6 @@ export function useBackendWallet() {
   const [loading, setLoading] = useState(true);
   const { user, authenticated, getAccessToken } = usePrivy();
 
-  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3030';
 
 
 

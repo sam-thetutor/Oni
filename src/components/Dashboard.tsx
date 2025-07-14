@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Wallet as WalletType } from '../types/wallet';
 import { Header } from './Header';
-import { WalletOverview } from './WalletOverview';
+// import { WalletOverview } from './WalletOverview';
 import { AIInterface } from './AIInterface';
 import { TransactionHistory } from './TransactionHistory';
 import { QuickActions } from './QuickActions';
@@ -31,9 +31,9 @@ export const Dashboard: React.FC<DashboardProps> = () => {
       <div className="max-w-7xl mx-auto px-4 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Wallet Overview */}
-          <div className="lg:col-span-1">
+          {/* <div className="lg:col-span-1">
             <WalletOverview />
-          </div>
+          </div> */}
 
           {/* Right Column - Main Interface */}
           <div className="lg:col-span-2">

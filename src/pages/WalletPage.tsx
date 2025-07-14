@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { Header } from '../components/Header';
-import { WalletOverview } from '../components/WalletOverview';
+// import { WalletOverview } from '../components/WalletOverview';
 import { TransactionHistory } from '../components/TransactionHistory';
 import { QuickActions } from '../components/QuickActions';
 import { DCAOrders } from '../components/DCAOrders';
 import { useBackendWallet } from '../hooks/useBackendWallet';
 import { usePaymentLinks, PaymentLinkData } from '../hooks/usePaymentLinks';
 import { Wallet, Copy, ExternalLink, Trash2, Plus, RefreshCw, Filter, Link as LinkIcon, History, Zap, TrendingUp } from 'lucide-react';
+import { WalletConnection } from '../components/WalletConnection';
+import { WalletOverview } from '../components/WalletOverview';
 
 export const WalletPage = () => {
   const { backendWallet, loading } = useBackendWallet();
@@ -70,15 +72,12 @@ export const WalletPage = () => {
     <div className="min-h-screen">
       <Header />
       <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1  xl:grid-cols-3 gap-4 sm:gap-6">
           {/* Wallet Overview - Full width on mobile, left column on desktop */}
-          <div className="xl:col-span-1 order-1 xl:order-1">
-            <WalletOverview walletAddress={backendWallet} />
-          </div>
-
+            <WalletConnection onConnect={() => {}} />
           {/* Main Interface - Full width on mobile, right column on desktop */}
           <div className="xl:col-span-2 order-2 xl:order-2">
-            <div className="bg-white/10 backdrop-blur-lg rounded-lg sm:rounded-2xl border border-white/20 shadow-2xl">
+            <div className="bg-white/10 backdrop-blur-lg rounded-lg mt-14 sm:rounded-2xl border border-white/20 shadow-2xl">
               {/* Responsive Tab Navigation */}
               <div className="flex border-b border-white/10 overflow-x-auto scrollbar-hide">
                 {tabs.map((tab) => {

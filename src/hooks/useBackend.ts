@@ -1,8 +1,7 @@
 import { useState, useCallback } from 'react';
 import { BackendError } from '../types/backend';
 import { usePrivy } from '@privy-io/react-auth';
-
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3030';
+import { BACKEND_URL } from '../utils/constants';
 
 interface BackendContextType {
   loading: boolean;
@@ -93,7 +92,7 @@ export const useBackend = (): BackendContextType => {
     };
 
     // Make the request
-    const response = await fetch(`${BACKEND_URL}${url}`, {
+    const response = await fetch(`${url}`, {
       ...options,
       headers,
     });

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useBackend } from './useBackend';
-
+import { BACKEND_URL } from '../utils/constants';
 interface WalletBalances {
   xfi: number;
   mpx: number;
@@ -28,7 +28,7 @@ export const useWalletBalance = (address: string | null): WalletBalances & { ref
       // Get XFI and MPX from CrossFi API
       const [crossfiResponse, tUSDCBalances] = await Promise.all([
         fetch(`https://test.xfiscan.com/api/1.0/addresses/${address}`),
-        authFetch('/api/dca/balances')
+        authFetch(`${BACKEND_URL}/api/dca/balances`)
       ]);
       
       if (!crossfiResponse.ok) {

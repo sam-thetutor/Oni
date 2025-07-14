@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Header } from '../components/Header';
 import { Trophy, Medal, Award, TrendingUp } from 'lucide-react';
+import { BACKEND_URL } from '../utils/constants';
 
 interface LeaderboardEntry {
   rank: number;
@@ -20,7 +21,8 @@ export const LeaderboardPage: React.FC = () => {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch('http://localhost:3030/api/gamification/leaderboard');
+        const res = await fetch(`${BACKEND_URL}/api/gamification/leaderboard?limit=100`);
+        console.log('Leaderboard response:', res);
         const data = await res.json();
         if (data.success) {
           setLeaderboard(data.leaderboard);
@@ -28,6 +30,7 @@ export const LeaderboardPage: React.FC = () => {
           setError(data.error || 'Failed to load leaderboard');
         }
       } catch (err) {
+        console.error('Error fetching leaderboard:', err);
         setError('Failed to load leaderboard');
       } finally {
         setLoading(false);
