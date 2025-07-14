@@ -119,16 +119,16 @@ export const LeaderboardPage: React.FC = () => {
             {/* Desktop Table Layout (>= md screens) */}
             <div className="hidden md:block overflow-x-auto">
               <table className="min-w-full bg-gray-900/50 rounded-lg overflow-hidden backdrop-blur-sm">
-                <thead>
-                  <tr className="bg-gradient-to-r from-purple-700 to-blue-700 text-white">
+              <thead>
+                <tr className="bg-gradient-to-r from-purple-700 to-blue-700 text-white">
                     <th className="px-4 lg:px-6 py-3 text-left text-sm lg:text-base">Rank</th>
                     <th className="px-4 lg:px-6 py-3 text-left text-sm lg:text-base">Username / Address</th>
                     <th className="px-4 lg:px-6 py-3 text-left text-sm lg:text-base">Points</th>
                     <th className="px-4 lg:px-6 py-3 text-left text-sm lg:text-base">Total Volume (XFI)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {leaderboard.map((entry) => (
+                </tr>
+              </thead>
+              <tbody>
+                {leaderboard.map((entry) => (
                     <tr 
                       key={entry.rank} 
                       className={`border-b border-gray-800 hover:bg-gray-800/50 transition-all duration-200 ${
@@ -143,7 +143,7 @@ export const LeaderboardPage: React.FC = () => {
                       <td className="px-4 lg:px-6 py-3 text-blue-200 font-mono">
                         {entry.username ? (
                           <span className="font-bold text-pink-300 text-sm lg:text-base">{entry.username}</span>
-                        ) : (
+                    ) : (
                           <span className="text-xs lg:text-sm">
                             {entry.walletAddress.slice(0, 8)}...{entry.walletAddress.slice(-6)}
                           </span>
@@ -158,11 +158,11 @@ export const LeaderboardPage: React.FC = () => {
                       <td className="px-4 lg:px-6 py-3 text-yellow-200 font-semibold text-sm lg:text-base">
                         {entry.totalVolume}
                       </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
             {/* Summary Stats */}
             {leaderboard.length > 0 && (

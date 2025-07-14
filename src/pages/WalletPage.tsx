@@ -3,13 +3,14 @@ import { Header } from '../components/Header';
 import { WalletOverview } from '../components/WalletOverview';
 import { TransactionHistory } from '../components/TransactionHistory';
 import { QuickActions } from '../components/QuickActions';
+import { DCAOrders } from '../components/DCAOrders';
 import { useBackendWallet } from '../hooks/useBackendWallet';
 import { usePaymentLinks, PaymentLinkData } from '../hooks/usePaymentLinks';
-import { Wallet, Copy, ExternalLink, Trash2, Plus, RefreshCw, Filter, Link as LinkIcon, History, Zap } from 'lucide-react';
+import { Wallet, Copy, ExternalLink, Trash2, Plus, RefreshCw, Filter, Link as LinkIcon, History, Zap, TrendingUp } from 'lucide-react';
 
 export const WalletPage = () => {
   const { backendWallet, loading } = useBackendWallet();
-  const [activeTab, setActiveTab] = useState<'overview' | 'history' | 'actions' | 'payment-links'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'history' | 'actions' | 'payment-links' | 'dca-orders'>('overview');
   
   // Payment Links functionality
   const {
@@ -62,6 +63,7 @@ export const WalletPage = () => {
     { id: 'history', label: 'Transaction History', shortLabel: 'History', icon: History },
     { id: 'actions', label: 'Quick Actions', shortLabel: 'Actions', icon: Zap },
     { id: 'payment-links', label: 'Payment Links', shortLabel: 'Links', icon: LinkIcon },
+    { id: 'dca-orders', label: 'DCA Orders', shortLabel: 'DCA', icon: TrendingUp },
   ] as const;
 
   return (
@@ -82,21 +84,21 @@ export const WalletPage = () => {
                 {tabs.map((tab) => {
                   const Icon = tab.icon;
                   return (
-                    <button
+                <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
                       className={`flex-1 min-w-0 py-3 sm:py-4 px-2 sm:px-4 text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
                         activeTab === tab.id
-                          ? 'text-white border-b-2 border-purple-500 bg-purple-500/10'
-                          : 'text-gray-300 hover:text-white hover:bg-white/5'
-                      }`}
-                    >
+                      ? 'text-white border-b-2 border-purple-500 bg-purple-500/10'
+                      : 'text-gray-300 hover:text-white hover:bg-white/5'
+                  }`}
+                >
                       <div className="flex items-center justify-center space-x-1 sm:space-x-2">
                         <Icon className="w-3 h-3 sm:w-4 sm:h-4" />
                         <span className="hidden sm:inline">{tab.label}</span>
                         <span className="sm:hidden">{tab.shortLabel}</span>
-                      </div>
-                    </button>
+                  </div>
+                </button>
                   );
                 })}
               </div>
@@ -142,6 +144,8 @@ export const WalletPage = () => {
                     prevPage={prevPage}
                     goToPage={goToPage}
                   />
+                ) : activeTab === 'dca-orders' ? (
+                  <DCAOrders />
                 ) : (
                   <QuickActions />
                 )}
@@ -331,9 +335,9 @@ const PaymentLinksContent: React.FC<{
 
       {/* Filter Controls */}
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex items-center space-x-2">
-          <Filter size={14} className="text-gray-400" />
-          <span className="text-xs text-gray-400">Filter:</span>
+      <div className="flex items-center space-x-2">
+        <Filter size={14} className="text-gray-400" />
+        <span className="text-xs text-gray-400">Filter:</span>
         </div>
         <div className="flex space-x-1">
           {['all', 'fixed', 'global'].map((filterType) => (
@@ -422,6 +426,6 @@ const PaymentLinksContent: React.FC<{
           </div>
         )
       )}
-    </div>
-  );
-}; 
+         </div>
+   );
+ }; 

@@ -16,8 +16,8 @@ export const Header: React.FC = () => {
   return (
     <>
       <header className="border-b border-white/10 bg-main-gradient font-mono text-text backdrop-blur-lg relative">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-4 py-4">
+        <div className="flex items-center justify-between">
             {/* Logo and Brand */}
             <div className="flex items-center space-x-3">
               <div className="flex items-center">
@@ -25,46 +25,46 @@ export const Header: React.FC = () => {
                 <Link to="/" className="hover:opacity-80 transition-opacity">
                   <h1 className="text-lg sm:text-xl font-bold text-white font-mono ml-2">Oni</h1>
                 </Link>
-              </div>
             </div>
+          </div>
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-4">
               <div className="flex items-center space-x-2">
-                {authenticated && (
-                  <button
-                    onClick={() => setIsTestModalOpen(true)}
-                    className="px-3 py-2 text-gray-300 hover:text-white transition-colors rounded-lg hover:bg-white/10 flex items-center space-x-2"
-                  >
-                    <span>Chat</span>
-                  </button>
-                )}
+                  {authenticated && (
+                    <button
+                      onClick={() => setIsTestModalOpen(true)}
+                      className="px-3 py-2 text-gray-300 hover:text-white transition-colors rounded-lg hover:bg-white/10 flex items-center space-x-2"
+                    >
+                      <span>Chat</span>
+                    </button>
+                  )}
                 <Link 
                   to="/leaderboard" 
                   className="px-3 py-2 text-gray-300 hover:text-white transition-colors rounded-lg hover:bg-white/10"
-                >
+                  >
                   Leaderboard
                 </Link>
-                {authenticated && (
-                  <Link 
-                    to="/wallet" 
-                    className="px-3 py-2 text-gray-300 hover:text-white transition-colors rounded-lg hover:bg-white/10 flex items-center space-x-1"
-                  >
-                    <Wallet className="w-4 h-4" />
-                    <span>Wallet</span>
-                  </Link>
-                )}
+                  {authenticated && (
+                    <Link 
+                      to="/wallet" 
+                      className="px-3 py-2 text-gray-300 hover:text-white transition-colors rounded-lg hover:bg-white/10 flex items-center space-x-1"
+                    >
+                      <Wallet className="w-4 h-4" />
+                      <span>Wallet</span>
+                    </Link>
+                  )}
               </div>
               
               {/* Desktop Auth Button */}
               {authenticated ? (
-                <button
+            <button
                   onClick={() => {logout(); navigate('/')}}
-                  className="flex items-center space-x-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-lg text-red-400 hover:text-red-300 transition-all duration-200"
-                >
-                  <LogOut className="w-4 h-4" />
-                  <span className="text-sm font-medium">Disconnect</span>
-                </button>
+              className="flex items-center space-x-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-lg text-red-400 hover:text-red-300 transition-all duration-200"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="text-sm font-medium">Disconnect</span>
+            </button>
               ) : (
                 <button
                   onClick={() => login()}
@@ -74,7 +74,7 @@ export const Header: React.FC = () => {
                   <span className="text-sm font-medium">Connect</span>
                 </button>
               )}
-            </div>
+          </div>
 
             {/* Mobile Menu Button */}
             <div className="md:hidden flex items-center space-x-2">
@@ -147,8 +147,8 @@ export const Header: React.FC = () => {
               </div>
             </div>
           )}
-        </div>
-      </header>
+      </div>
+    </header>
 
       {/* Test Modal */}
       <TestModal 

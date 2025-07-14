@@ -14,232 +14,141 @@ import { priceDataRoutes } from "./routes/price-data.js";
 import dcaRoutes from "./routes/dca.js";
 import { PriceCacheService } from "./services/price-cache.js";
 import { DCAExecutorService } from "./services/dca-executor.js";
+import { setCurrentUserId } from "./tools.js";
 
 config();
 
 const app = express();
-const port = process.env.PORT || 3030;
+const PORT = process.env.PORT || 3030;
 
-// Connect to database
-connectDB();
+// CORS configuration for production
+const corsOptions = {
+  origin: process.env.NODE_ENV === 'production' 
+    ? [process.env.FRONTEND_URL || 'https://your-frontend-domain.vercel.app']
+    : ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:3000'],
+  credentials: true,
+  optionsSuccessStatus: 200
+};
 
-// Middleware
-app.use(cors());
-app.use(express.json());
+app.use(cors(corsOptions));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Contract routes
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'healthy', 
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
+// API routes
 app.use('/api/contract', contractRoutes);
-
-// Gamification routes
 app.use('/api/gamification', gamificationRoutes);
-
-// User routes
 app.use('/api/user/wallet', userWalletRoutes);
 app.use('/api/user/payment-links', userPaymentLinksRoutes);
-
-// Price data routes (CoinGecko proxy)
-app.use('/api/price', priceDataRoutes);
-
-// DCA routes
+app.use('/api/price-data', priceDataRoutes);
 app.use('/api/dca', dcaRoutes);
 
-// AI Chat route with authentication (for frontend compatibility)
-app.post("/api/ai/chat", 
-  authenticateToken,
-  requireWalletConnection,
-  async (req, res) => {
-    try {
-      const { message, tools, toolInput } = req.body;
-      const user = (req as any).user;
-
-      console.log("AI Chat request from authenticated user:", message);
-      console.log("User ID:", user.id);
-      console.log("Wallet address:", user.walletAddress);
-      console.log("Requested tools:", tools);
-      console.log("Tool input:", toolInput);
-
-      if (!message) {
-        return res.status(400).json({ error: "Message is required" });
-      }
-
-      // Get existing chat history for this user using wallet address as ID
-      const chatHistory = memoryStore.getHistory(user.walletAddress);
-
-      // Add user message to chat history
-      chatHistory.push(new HumanMessage(message));
-
-      console.log("Invoking graph with userId:", user.walletAddress);
-
-      // Invoke the graph with the updated chat history and user context
-      const result = await graph.invoke({
-        messages: chatHistory,
-        userId: user.walletAddress,
-      });
-
-      // Extract the last AI message from the result
-      const aiMessages = result.messages.filter(
-        (msg: any) => msg._getType() === "ai"
-      );
-      const lastAIMessage = aiMessages[aiMessages.length - 1];
-
-      // Save updated conversation history
-      memoryStore.saveHistory(user.walletAddress, result.messages);
-
-      console.log("AI response:", lastAIMessage.content);
-
-      // Extract tool results if any
-      const toolResults = result.messages
-        .filter((msg: any) => msg._getType() === "tool")
-        .map((msg: any) => ({
-          tool: msg.name,
-          result: msg.content
-        }));
-
-      // Send response with full conversation history and tool results
-      res.json({
-        response: lastAIMessage.content,
-        history: result.messages.map((msg: any) => ({
-          type: msg._getType(),
-          content: msg.content
-        })),
-        toolResults: toolResults
-      });
-    } catch (error: any) {
-      console.error("Error processing AI chat:", error);
-      res.status(500).json({
-        error: "Error processing AI chat request",
-        details: error.message,
-      });
-    }
-  }
-);
-
-// Message route with authentication
-app.post("/message", 
-  authenticateToken,
-  requireWalletConnection,
-  async (req, res) => {
-    try {
-      const { message } = req.body;
-      const user = (req as any).user;
-
-      console.log("Message from authenticated user:", message);
-      console.log("User ID:", user.id);
-      console.log("Wallet address:", user.walletAddress);
-      console.log("Database user exists:", !!user.dbUser);
-
-      if (!message) {
-        return res.status(400).json({ error: "Message is required" });
-      }
-
-      // Get existing chat history for this user using wallet address as ID
-      const chatHistory = memoryStore.getHistory(user.walletAddress);
-
-      // Add user message to chat history
-      chatHistory.push(new HumanMessage(message));
-
-      console.log("Invoking graph with userId:", user.walletAddress);
-
-      // Invoke the graph with the updated chat history and user context
-      const result = await graph.invoke({
-        messages: chatHistory,
-        userId: user.walletAddress,
-      });
-
-      // Extract the last AI message from the result
-      const aiMessages = result.messages.filter(
-        (msg: any) => msg._getType() === "ai"
-      );
-      const lastAIMessage = aiMessages[aiMessages.length - 1];
-
-      // Save updated conversation history
-      memoryStore.saveHistory(user.walletAddress, result.messages);
-
-      console.log("AI response:", lastAIMessage.content);
-
-      // Send response with full conversation history
-      res.json({
-        response: lastAIMessage.content,
-        history: result.messages.map((msg: any) => ({
-          type: msg._getType(),
-          content: msg.content
-        }))
-      });
-    } catch (error: any) {
-      console.error("Error processing message:", error);
-      res.status(500).json({
-        error: "Error processing message",
-        details: error.message,
-      });
-    }
-  }
-);
-
-// Clear conversation history (authenticated)
-app.post("/clear", authenticateToken, (req, res) => {
-  const user = (req as any).user;
-  memoryStore.clearHistory(user.walletAddress);
-  res.json({ status: "ok" });
-});
-
-// Get conversation history (authenticated)
-app.get("/history", authenticateToken, (req, res) => {
-  const user = (req as any).user;
-  const history = memoryStore.getHistory(user.walletAddress);
-  res.json({
-    history: history.map((msg: any) => ({
-      type: msg._getType(),
-      content: msg.content
-    }))
-  });
-});
-
-// Health check route
-app.get("/health", (req, res) => {
-  res.json({ status: "ok" });
-});
-
-// Schedule automatic cache cleanup every hour
-setInterval(async () => {
+// Main message endpoint
+app.post('/message', authenticateToken, requireWalletConnection, async (req, res) => {
   try {
-    await PriceCacheService.clearExpiredCache();
-  } catch (error) {
-    console.error('Error during scheduled cache cleanup:', error);
-  }
-}, 60 * 60 * 1000); // Run every hour
+    const { message } = req.body;
+    const user = req.user!;
 
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-  console.log(`⏰ Scheduled cache cleanup every hour`);
-  
-  // Start DCA execution engine
-  try {
-    const dcaStarted = DCAExecutorService.startExecutor({
-      monitoringIntervalSeconds: 30, // Check every 30 seconds
-      maxConcurrentExecutions: 5,
-      enableAutoRestart: true,
-      logLevel: 'info'
+    console.log(`Processing message from user ${user.id}: ${message}`);
+
+    // Set current user ID for the graph
+    setCurrentUserId(user.walletAddress);
+
+    // Add user message to memory
+    memoryStore.addMessage(user.id, new HumanMessage(message));
+
+    // Get conversation history
+    const history = memoryStore.getHistory(user.id);
+
+    // Run the graph
+    const result = await graph.invoke({
+      messages: history,
     });
-    
-    if (dcaStarted) {
-      console.log(`🔄 DCA Execution Engine started - monitoring every 30 seconds`);
-    } else {
-      console.warn(`⚠️ DCA Execution Engine failed to start`);
+
+    // Add AI response to memory
+    const aiMessage = result.messages[result.messages.length - 1];
+    if (aiMessage) {
+      memoryStore.addMessage(user.id, aiMessage);
     }
-  } catch (error) {
-    console.error(`❌ Error starting DCA Execution Engine:`, error);
+
+    // Extract the response
+    const response = aiMessage?.content || "I'm sorry, I couldn't generate a response.";
+
+    console.log(`Response to user ${user.id}: ${response}`);
+
+    res.json({ response });
+  } catch (error: any) {
+    console.error('Error processing message:', error);
+    res.status(500).json({ 
+      error: 'Internal server error',
+      message: error.message 
+    });
   }
-  
-  // Graceful shutdown handling
-  process.on('SIGTERM', async () => {
-    console.log('🛑 Received SIGTERM signal. Starting graceful shutdown...');
-    await DCAExecutorService.gracefulShutdown();
-    process.exit(0);
+});
+
+// Error handling middleware
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error('Unhandled error:', err);
+  res.status(500).json({ 
+    error: 'Internal server error',
+    message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
   });
-  
-  process.on('SIGINT', async () => {
-    console.log('🛑 Received SIGINT signal. Starting graceful shutdown...');
-    await DCAExecutorService.gracefulShutdown();
-    process.exit(0);
+});
+
+// 404 handler
+app.use('*', (req, res) => {
+  res.status(404).json({ 
+    error: 'Not found',
+    message: `Route ${req.method} ${req.originalUrl} not found`
   });
-}); 
+});
+
+// Start server
+const startServer = async () => {
+  try {
+    // Connect to database
+    await connectDB();
+    console.log('✅ Connected to MongoDB');
+
+    // Initialize services (PriceCacheService doesn't need initialization)
+    console.log('✅ Price cache service ready');
+
+    // Start DCA executor
+    DCAExecutorService.startExecutor();
+    console.log('✅ DCA executor service started');
+
+    // Start server
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+      console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+    });
+  } catch (error) {
+    console.error('❌ Failed to start server:', error);
+    process.exit(1);
+  }
+};
+
+// Handle graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, shutting down gracefully');
+  DCAExecutorService.stopExecutor();
+  process.exit(0);
+});
+
+process.on('SIGINT', () => {
+  console.log('SIGINT received, shutting down gracefully');
+  DCAExecutorService.stopExecutor();
+  process.exit(0);
+});
+
+// Start the server
+startServer(); 
