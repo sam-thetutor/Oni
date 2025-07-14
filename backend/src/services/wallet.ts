@@ -60,7 +60,18 @@ export class WalletService {
       return user;
     } catch (error) {
       console.error('❌ Error getting user wallet:', error);
-      throw new Error('Failed to get or create user wallet');
+      
+      // Check if it's a database connection error
+      if (error instanceof Error && error.message.includes('MongoNetworkError')) {
+        throw new Error('Database connection failed. Please try again later.');
+      }
+      
+      // Check if it's an encryption error
+      if (error instanceof Error && error.message.includes('ENCRYPTION_KEY')) {
+        throw new Error('Wallet encryption failed. Please check server configuration.');
+      }
+      
+      throw new Error('Failed to get or create user wallet. Please try again later.');
     }
   }
 
