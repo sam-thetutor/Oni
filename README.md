@@ -133,6 +133,34 @@ if (isGlobal) {
 }
 ```
 
+## 📝 Patch Notes & Releases
+
+We maintain comprehensive patch notes and release documentation to keep users informed about updates and changes.
+
+### 📋 Quick Access
+- **[Changelog](docs/CHANGELOG.md)** - Complete history of all changes
+- **[Release Notes](docs/releases/)** - Detailed release documentation
+- **[Patch Notes Guide](docs/PATCH_NOTES_GUIDE.md)** - How to manage releases
+
+### 🚀 Latest Updates
+```bash
+# Check current version and unreleased changes
+./scripts/version-manager.sh status
+
+# Add a new change entry
+./scripts/version-manager.sh add added "New feature description"
+./scripts/version-manager.sh add fixed "Bug fix description"
+
+# Release a new version
+./scripts/version-manager.sh release 1.1.0
+```
+
+### 📊 Version History
+- **v1.0.0** - Initial release with core features
+- **v1.1.0** - Real-time updates and performance improvements (coming soon)
+
+For detailed information about each release, see the [releases directory](docs/releases/).
+
 ## 🔧 Installation & Setup
 
 ### Prerequisites
