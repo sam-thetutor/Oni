@@ -286,7 +286,7 @@ class SendTransactionTool extends StructuredTool {
           } catch (balanceError) {
             console.error('Error fetching updated balance:', balanceError);
           }
-        }, 2000); // Wait 2 seconds for blockchain to update
+        }, 1000); // Wait 1 second for blockchain to update
 
       } catch (socketError) {
         console.error('Error emitting real-time events:', socketError);
@@ -758,6 +758,50 @@ class PayFixedPaymentLinkTool extends StructuredTool {
         paymentLink.status = 'paid';
         await paymentLink.save();
 
+        // Emit real-time events
+        try {
+          const io = getIO();
+          
+          // Emit transaction success
+          emitTransactionSuccess(io, walletAddress, {
+            transactionHash: result.data.transactionHash,
+            from: walletAddress,
+            to: linkId,
+            value: paymentLink.amount.toString(),
+            status: 'success',
+            explorerUrl: `https://test.xfiscan.com/tx/${result.data.transactionHash}`
+          });
+
+          // Emit new transaction
+          emitNewTransaction(io, walletAddress, {
+            hash: result.data.transactionHash,
+            from: walletAddress,
+            to: linkId,
+            value: paymentLink.amount.toString(),
+            status: 'success',
+            timestamp: new Date().toISOString()
+          });
+
+          // Get and emit updated balance
+          setTimeout(async () => {
+            try {
+              const balance = await BlockchainService.getBalance(walletAddress);
+              emitBalanceUpdate(io, walletAddress, {
+                address: balance.address,
+                balance: balance.balance,
+                formatted: balance.formatted,
+                symbol: 'XFI'
+              });
+            } catch (balanceError) {
+              console.error('Error fetching updated balance:', balanceError);
+            }
+          }, 1000); // Wait 1 second for blockchain to update
+
+        } catch (socketError) {
+          console.error('Error emitting real-time events:', socketError);
+          // Don't fail the transaction if real-time updates fail
+        }
+
         return JSON.stringify({
           success: true,
           linkId: linkId,
@@ -847,6 +891,50 @@ class ContributeToGlobalPaymentLinkTool extends StructuredTool {
       const result = await contractService.contributeToGlobalPaymentLink(linkId, amount);
       
       if (result.success) {
+        // Emit real-time events
+        try {
+          const io = getIO();
+          
+          // Emit transaction success
+          emitTransactionSuccess(io, walletAddress, {
+            transactionHash: result.data.transactionHash,
+            from: walletAddress,
+            to: linkId,
+            value: amount,
+            status: 'success',
+            explorerUrl: `https://test.xfiscan.com/tx/${result.data.transactionHash}`
+          });
+
+          // Emit new transaction
+          emitNewTransaction(io, walletAddress, {
+            hash: result.data.transactionHash,
+            from: walletAddress,
+            to: linkId,
+            value: amount,
+            status: 'success',
+            timestamp: new Date().toISOString()
+          });
+
+          // Get and emit updated balance
+          setTimeout(async () => {
+            try {
+              const balance = await BlockchainService.getBalance(walletAddress);
+              emitBalanceUpdate(io, walletAddress, {
+                address: balance.address,
+                balance: balance.balance,
+                formatted: balance.formatted,
+                symbol: 'XFI'
+              });
+            } catch (balanceError) {
+              console.error('Error fetching updated balance:', balanceError);
+            }
+          }, 1000); // Wait 1 second for blockchain to update
+
+        } catch (socketError) {
+          console.error('Error emitting real-time events:', socketError);
+          // Don't fail the transaction if real-time updates fail
+        }
+
         return JSON.stringify({
           success: true,
           linkId: linkId,
@@ -1220,6 +1308,50 @@ class AddLiquidityTool extends StructuredTool {
       );
 
       if (result.success) {
+        // Emit real-time events
+        try {
+          const io = getIO();
+          
+          // Emit transaction success
+          emitTransactionSuccess(io, userId, {
+            transactionHash: result.transactionHash,
+            from: userId,
+            to: 'Liquidity Pool',
+            value: `${xfiAmount} XFI + ${tUSDCAmount} tUSDC`,
+            status: 'success',
+            explorerUrl: `https://test.xfiscan.com/tx/${result.transactionHash}`
+          });
+
+          // Emit new transaction
+          emitNewTransaction(io, userId, {
+            hash: result.transactionHash,
+            from: userId,
+            to: 'Liquidity Pool',
+            value: `${xfiAmount} XFI + ${tUSDCAmount} tUSDC`,
+            status: 'success',
+            timestamp: new Date().toISOString()
+          });
+
+          // Get and emit updated balance
+          setTimeout(async () => {
+            try {
+              const balance = await BlockchainService.getBalance(userId);
+              emitBalanceUpdate(io, userId, {
+                address: balance.address,
+                balance: balance.balance,
+                formatted: balance.formatted,
+                symbol: 'XFI'
+              });
+            } catch (balanceError) {
+              console.error('Error fetching updated balance:', balanceError);
+            }
+          }, 1000); // Wait 1 second for blockchain to update
+
+        } catch (socketError) {
+          console.error('Error emitting real-time events:', socketError);
+          // Don't fail the transaction if real-time updates fail
+        }
+
         return JSON.stringify({
           success: true,
           message: `✅ Successfully added ${xfiAmount} XFI + ${tUSDCAmount} tUSDC to the liquidity pool!`,

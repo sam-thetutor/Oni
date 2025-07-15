@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useBackendWallet } from '../hooks/useBackendWallet';
 import { useWalletBalance } from '../hooks/useWalletBalance';
 import { useRealTimeWallet } from '../hooks/useRealTimeWallet';
+import { useRefresh } from '../context/RefreshContext';
 import { WalletConnection } from './WalletConnection';
 import { RefreshCw } from 'lucide-react';
 
@@ -12,15 +13,33 @@ interface WalletOverviewProps {
 export const WalletOverview: React.FC<WalletOverviewProps> = ({ walletAddress }) => {
   // If walletAddress is not provided, get it from backend
   const { backendWallet, loading: walletLoading } = useBackendWallet();
-  const { balance, isUpdating, isConnected, refreshBalance, testConnection } = useRealTimeWallet();
-  const { balance: fallbackBalance, loading: balanceLoading } = useWalletBalance();
+  const address = walletAddress || backendWallet;
+  const { balance, isUpdating, isConnected, refreshBalance } = useRealTimeWallet();
+  const { xfi: fallbackBalance, isLoading: balanceLoading, refreshBalances: refetchBalance } = useWalletBalance(address);
+  const { onWalletRefresh } = useRefresh();
   
   console.log(backendWallet);
-  const address = walletAddress || backendWallet;
 
   // Use real-time balance if available, otherwise fall back to API balance
-  const currentBalance = balance || fallbackBalance;
+  const currentBalance = balance ? balance.formatted : fallbackBalance?.toString();
   const isLoading = balanceLoading || isUpdating;
+  
+  // Debug logging
+  console.log('🔍 WalletOverview Debug:', {
+    realTimeBalance: balance,
+    fallbackBalance,
+    currentBalance,
+    isLoading,
+    isConnected
+  });
+
+  // Register refresh function with global context
+  useEffect(() => {
+    onWalletRefresh(() => {
+      console.log('🔄 WalletOverview: Refreshing balance...');
+      refetchBalance();
+    });
+  }, [onWalletRefresh, refetchBalance]);
 
   return (
     <div className="bg-gray-900 rounded-lg shadow-lg p-6 w-full max-w-2xl mx-auto">
@@ -42,7 +61,7 @@ export const WalletOverview: React.FC<WalletOverviewProps> = ({ walletAddress })
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
           </button>
           <button
-            onClick={testConnection}
+            onClick={refreshBalance}
             className="p-2 text-blue-400 hover:text-blue-300 transition-colors"
             title="Test WebSocket"
           >
@@ -63,7 +82,7 @@ export const WalletOverview: React.FC<WalletOverviewProps> = ({ walletAddress })
                 {isLoading ? (
                   <div className="animate-pulse bg-gray-600 h-6 w-24 rounded"></div>
                 ) : (
-                  `${currentBalance.formatted || currentBalance.balance} XFI`
+                  `${currentBalance} XFI`
                 )}
               </div>
               {balance && (

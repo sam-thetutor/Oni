@@ -1,6 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useBackend } from './useBackend';
+import { useRefresh } from '../context/RefreshContext';
 import { BACKEND_URL } from '../utils/constants';
+
 export interface PaymentLinkData {
   _id: string;
   linkId: string;
@@ -73,6 +75,7 @@ export interface PaymentLinkStatsResponse {
 
 export const usePaymentLinks = () => {
   const { authFetch } = useBackend();
+  const { onPaymentLinksRefresh } = useRefresh();
   const [paymentLinks, setPaymentLinks] = useState<PaymentLinkData[]>([]);
   const [stats, setStats] = useState<PaymentLinkStats | null>(null);
   const [loading, setLoading] = useState(false);
@@ -154,6 +157,15 @@ export const usePaymentLinks = () => {
       // Don't set error state for stats as it's not critical
     }
   }, [authFetch]);
+
+  // Register refresh function with global context
+  useEffect(() => {
+    onPaymentLinksRefresh(() => {
+      console.log('🔄 usePaymentLinks: Refreshing payment links...');
+      fetchPaymentLinks(pagination.page, pagination.limit);
+      fetchStats();
+    });
+  }, [onPaymentLinksRefresh, fetchPaymentLinks, fetchStats, pagination.page, pagination.limit]);
 
   // Fetch specific payment link
   const fetchPaymentLink = useCallback(async (linkId: string): Promise<PaymentLinkData | null> => {

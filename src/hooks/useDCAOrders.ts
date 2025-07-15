@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useBackend } from './useBackend';
+import { useRefresh } from '../context/RefreshContext';
 import { BACKEND_URL } from '../utils/constants';
 
 export interface DCAOrder {
@@ -83,6 +84,7 @@ export const useDCAOrders = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { authFetch } = useBackend();
+  const { onDCAOrdersRefresh } = useRefresh();
 
   // Fetch user's DCA orders
   const fetchOrders = useCallback(async (status?: string) => {
@@ -148,7 +150,14 @@ export const useDCAOrders = () => {
     }
   }, [authFetch]);
 
-
+  // Register refresh function with global context
+  useEffect(() => {
+    onDCAOrdersRefresh(() => {
+      console.log('🔄 useDCAOrders: Refreshing DCA orders...');
+      fetchOrders();
+      fetchStats();
+    });
+  }, [onDCAOrdersRefresh, fetchOrders, fetchStats]);
 
   // Create DCA order
   const createOrder = useCallback(async (orderData: {
@@ -201,68 +210,78 @@ export const useDCAOrders = () => {
       if (data.success) {
         await fetchOrders(); // Refresh orders
         await fetchStats(); // Refresh stats
-        return true;
+        return { success: true };
       } else {
         setError(data.error || 'Failed to cancel DCA order');
-        return false;
+        return { success: false, error: data.error };
       }
     } catch (err: any) {
       console.error('Error cancelling DCA order:', err);
       setError(err.message || 'Failed to cancel DCA order');
-      return false;
+      return { success: false, error: err.message };
     }
   }, [authFetch, fetchOrders, fetchStats]);
 
   // Get swap quote
-  const getSwapQuote = useCallback(async (quoteData: {
-    fromToken: 'XFI' | 'tUSDC';
-    toToken: 'XFI' | 'tUSDC';
+  const getSwapQuote = useCallback(async (params: {
+    fromToken: string;
+    toToken: string;
     amount: string;
     slippage?: number;
-  }): Promise<{ success: boolean; data?: SwapQuote; error?: string }> => {
+  }): Promise<SwapQuote | null> => {
     try {
-      const response = await authFetch('/api/dca/quote', {
+      const response = await authFetch('/api/dca/swap/quote', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(quoteData)
+        body: JSON.stringify(params)
       });
       
       const data = await response.json();
-      return data;
-    } catch (err: any) {
+      
+      if (data.success) {
+        return data.data;
+      } else {
+        console.error('Failed to get swap quote:', data.error);
+        return null;
+      }
+    } catch (err) {
       console.error('Error getting swap quote:', err);
-      return { success: false, error: err.message };
+      return null;
     }
   }, [authFetch]);
 
-  // Refresh all data
-  const refresh = useCallback(async () => {
-    await Promise.all([
-      fetchOrders(),
-      fetchStats(),
-      fetchSystemStatus()
-    ]);
-  }, [fetchOrders, fetchStats, fetchSystemStatus]);
-
   // Initial load
   useEffect(() => {
-    refresh();
-  }, [refresh]);
+    fetchOrders();
+    fetchStats();
+    fetchSystemStatus();
+  }, [fetchOrders, fetchStats, fetchSystemStatus]);
 
   return {
+    // Data
     orders,
     stats,
     systemStatus,
+    
+    // State
     loading,
     error,
+    
+    // Actions
     fetchOrders,
     fetchStats,
     fetchSystemStatus,
     createOrder,
     cancelOrder,
     getSwapQuote,
-    refresh
+    
+    // Refresh all data
+    refresh: () => {
+      fetchOrders();
+      fetchStats();
+      fetchSystemStatus();
+    }
   };
 }; 

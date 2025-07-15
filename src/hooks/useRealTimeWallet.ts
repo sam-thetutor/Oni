@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useWebSocket } from '../context/WebSocketContext';
+import { useRefresh } from '../context/RefreshContext';
 import { usePrivy } from '@privy-io/react-auth';
 
 interface BalanceData {
@@ -38,6 +39,7 @@ interface TransactionSuccessData {
 
 export const useRealTimeWallet = () => {
   const { socket, isConnected, emit } = useWebSocket();
+  const { refreshWallet, refreshTransactions, refreshDCAOrders, refreshPaymentLinks } = useRefresh();
   const { user } = usePrivy();
   
   const [balance, setBalance] = useState<BalanceData | null>(null);
@@ -62,18 +64,36 @@ export const useRealTimeWallet = () => {
       console.log('💰 Balance updated:', data);
       setBalance(data);
       setIsUpdating(false);
+      
+      // Trigger global refreshes
+      refreshWallet();
+      refreshTransactions();
+      refreshDCAOrders();
+      refreshPaymentLinks();
     };
 
     // New transactions
     const handleNewTransaction = (data: TransactionData) => {
       console.log('📝 New transaction:', data);
       setTransactions(prev => [data, ...prev.slice(0, 9)]); // Keep latest 10
+      
+      // Trigger global refreshes
+      refreshWallet();
+      refreshTransactions();
+      refreshDCAOrders();
+      refreshPaymentLinks();
     };
 
     // Points earned
     const handlePointsEarned = (data: PointsData) => {
       console.log('🏆 Points earned:', data);
       setPointsEarned(data);
+      
+      // Trigger global refreshes
+      refreshWallet();
+      refreshTransactions();
+      refreshDCAOrders();
+      refreshPaymentLinks();
       
       // Clear points notification after 5 seconds
       setTimeout(() => {
@@ -85,6 +105,12 @@ export const useRealTimeWallet = () => {
     const handleTransactionSuccess = (data: TransactionSuccessData) => {
       console.log('✅ Transaction success:', data);
       setLastTransaction(data);
+      
+      // Trigger global refreshes
+      refreshWallet();
+      refreshTransactions();
+      refreshDCAOrders();
+      refreshPaymentLinks();
       
       // Clear transaction notification after 10 seconds
       setTimeout(() => {
@@ -120,7 +146,7 @@ export const useRealTimeWallet = () => {
       socket.off('wallet:transaction:success', handleTransactionSuccess);
       socket.off('error', handleError);
     };
-  }, [socket, isConnected]);
+  }, [socket, isConnected, refreshWallet, refreshTransactions, refreshDCAOrders, refreshPaymentLinks]);
 
   // Manual refresh functions
   const refreshBalance = useCallback(() => {
@@ -130,11 +156,11 @@ export const useRealTimeWallet = () => {
     }
   }, [isConnected, emit]);
 
-  const refreshTransactions = useCallback(() => {
-    if (isConnected) {
-      emit('wallet:refresh:transactions');
-    }
-  }, [isConnected, emit]);
+  // const refreshTransactions = useCallback(() => {
+  //   if (isConnected) {
+  //     emit('wallet:refresh:transactions');
+  //   }
+  // }, [isConnected, emit]);
 
   const refreshStats = useCallback(() => {
     if (isConnected) {

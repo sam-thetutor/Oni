@@ -1,12 +1,9 @@
-import React, { useEffect, useState } from 'react';
-import { ArrowUpRight, ArrowDownLeft, RotateCcw, ExternalLink, Filter, RefreshCw } from 'lucide-react';
+import React, { useEffect } from 'react';
 import { useRealTimeWallet } from '../hooks/useRealTimeWallet';
+import { useRefresh } from '../context/RefreshContext';
+import { RefreshCw, ExternalLink, Copy } from 'lucide-react';
 
-interface TransactionHistoryProps {
-  walletAddress: string | null;
-}
-
-interface Transaction {
+interface XFIScanTransaction {
   txhash: string;
   timestamp: string;
   body: {
@@ -21,184 +18,242 @@ interface Transaction {
       };
     }>;
   };
+  evm_txhashes: string[];
+  code: number;
 }
 
-export const TransactionHistory: React.FC<TransactionHistoryProps> = ({ walletAddress }) => {
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<'all' | 'send' | 'receive'>('all');
-  const { transactions: realTimeTransactions, isConnected, refreshTransactions } = useRealTimeWallet();
+interface Transaction {
+  hash: string;
+  from: string;
+  to: string;
+  value: string;
+  status: string;
+  timestamp: string;
+}
 
-  useEffect(() => {
-    if (!walletAddress) return;
+export const TransactionHistory: React.FC = () => {
+  const { transactions: realTimeTransactions, isConnected, refreshTransactions } = useRealTimeWallet();
+  const { onTransactionRefresh } = useRefresh();
+  const [transactions, setTransactions] = React.useState<Transaction[]>([]);
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+
+  const fetchTransactions = React.useCallback(async () => {
     setLoading(true);
     setError(null);
-    fetch(`https://test.xfiscan.com/api/1.0/txs?address=${walletAddress}&page=1&limit=20`)
-      .then(res => res.json())
-      .then(data => {
-        setTransactions(data.docs || []);
-        setLoading(false);
-      })
-      .catch(err => {
+    try {
+      // Use the XFI scan API directly
+      const response = await fetch('https://test.xfiscan.com/api/1.0/txs?address=0x85a4b09fb0788f1c549a68dc2edae3f97aeb5dd7&page=1&limit=20');
+      const data = await response.json();
+      
+      if (data.docs) {
+        // Parse the XFI scan transaction data
+        const parsedTransactions: Transaction[] = data.docs
+          .filter((tx: XFIScanTransaction) => tx.code === 0) // Only successful transactions
+          .map((tx: XFIScanTransaction) => {
+            const message = tx.body.messages[0];
+            const data = message.data;
+            
+            // Extract transaction details
+            const from = data?.from || message.from || '';
+            const to = data?.to || message.to || '';
+            const value = data?.value || message.value || '0';
+            
+            // Convert wei to XFI (1 XFI = 10^18 wei)
+            const valueInXFI = (parseInt(value) / Math.pow(10, 18)).toString();
+            
+            return {
+              hash: tx.evm_txhashes[0] || tx.txhash,
+              from: from.toLowerCase(),
+              to: to.toLowerCase(),
+              value: valueInXFI,
+              status: tx.code === 0 ? 'success' : 'failed',
+              timestamp: tx.timestamp
+            };
+          })
+          .filter((tx: any) => tx.from && tx.to && tx.value !== '0'); // Filter out empty transactions
+        
+        setTransactions(parsedTransactions);
+      } else {
         setError('Failed to fetch transactions');
-        setLoading(false);
-      });
-  }, [walletAddress]);
+      }
+    } catch (err) {
+      console.error('Error fetching transactions:', err);
+      setError('Failed to fetch transactions');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  if (!walletAddress) {
-    return <div className="text-gray-400">No Oni wallet found.</div>;
-  }
+  // Register refresh function with global context
+  useEffect(() => {
+    onTransactionRefresh(() => {
+      console.log('🔄 TransactionHistory: Refreshing transactions...');
+      fetchTransactions();
+    });
+  }, [onTransactionRefresh, fetchTransactions]);
 
-  if (loading) {
-    return <div className="text-gray-400">Loading transactions...</div>;
-  }
+  // Initial load
+  React.useEffect(() => {
+    fetchTransactions();
+  }, [fetchTransactions]);
 
-  if (error) {
-    return <div className="text-red-400">{error}</div>;
-  }
-
-  if (transactions.length === 0) {
-    return <div className="text-gray-400">No transactions found.</div>;
-  }
-  const getType = (from: string | undefined) => {
-    return from?.toLowerCase() === walletAddress?.toLowerCase() ? 'send' : 'receive';
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
   };
 
-  const filteredTransactions = transactions.filter(tx => {
-    if (filter === 'all') return true;
-    return getType(tx?.body?.messages[0]?.from) === filter;
-  });
+  const formatAddress = (address: string) => {
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  };
 
-  const getTransactionIcon = (type: 'send' | 'receive') => {
-    switch (type) {
-      case 'send':
-        return <ArrowUpRight className="w-5 h-5 text-red-400" />;
-      case 'receive':
-        return <ArrowDownLeft className="w-5 h-5 text-green-400" />;
+  const formatValue = (value: string) => {
+    const numValue = parseFloat(value);
+    return numValue.toFixed(3);
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'success':
+        return 'text-green-400';
+      case 'pending':
+        return 'text-yellow-400';
+      case 'failed':
+        return 'text-red-400';
       default:
-        return <RotateCcw className="w-5 h-5 text-blue-400" />;
+        return 'text-gray-400';
     }
   };
 
+  const getExplorerUrl = (hash: string) => {
+    return `https://test.xfiscan.com/tx/${hash}`;
+  };
+
+  // Combine real-time transactions with fetched transactions
+  const allTransactions = React.useMemo(() => {
+    const combined = [...(realTimeTransactions || []), ...transactions];
+    // Remove duplicates based on hash
+    const unique = combined.filter((tx, index, self) => 
+      index === self.findIndex(t => t.hash === tx.hash)
+    );
+    return unique.slice(0, 20); // Keep latest 20
+  }, [realTimeTransactions, transactions]);
+
   return (
-    <div className="space-y-6">
-      {/* Header with Real-time Status */}
-      <div className="flex items-center justify-between">
+    <div className="bg-gray-900 rounded-lg shadow-lg p-6 w-full max-w-4xl mx-auto">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-semibold text-white">Transaction History</h2>
         <div className="flex items-center space-x-2">
-          <h3 className="text-lg font-semibold text-white">Transaction History</h3>
           {isConnected && (
             <div className="flex items-center space-x-1 text-green-400 text-xs">
               <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
               <span>Live</span>
             </div>
           )}
+          <button
+            onClick={fetchTransactions}
+            disabled={loading}
+            className="p-2 text-gray-400 hover:text-white transition-colors disabled:opacity-50"
+            title="Refresh transactions"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          </button>
         </div>
-        <button
-          onClick={refreshTransactions}
-          disabled={loading}
-          className="p-2 text-gray-400 hover:text-white transition-colors disabled:opacity-50"
-          title="Refresh transactions"
-        >
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-        </button>
       </div>
 
-      {/* Real-time Transaction Notifications */}
-      {realTimeTransactions.length > 0 && (
-        <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
-          <div className="flex items-center space-x-2 text-blue-400 text-sm">
-            <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
-            <span>New real-time transactions available</span>
-          </div>
+      {loading && (
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-400 mx-auto"></div>
+          <p className="text-gray-400 mt-2">Loading transactions...</p>
         </div>
       )}
 
-      {/* Filter Tabs */}
-      <div className="flex space-x-1 bg-gray-800/50 rounded-lg p-1">
-        {[
-          { key: 'all', label: 'All' },
-          { key: 'send', label: 'Sent' },
-          { key: 'receive', label: 'Received' },
-        ].map(({ key, label }) => (
+      {error && (
+        <div className="text-center py-8">
+          <p className="text-red-400">{error}</p>
           <button
-            key={key}
-            onClick={() => setFilter(key as any)}
-            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
-              filter === key
-                ? 'bg-purple-600 text-white shadow-lg'
-                : 'text-gray-300 hover:text-white hover:bg-gray-700/50'
-            }`}
+            onClick={fetchTransactions}
+            className="mt-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded transition-colors"
           >
-            {label}
+            Retry
           </button>
-        ))}
-      </div>
+        </div>
+      )}
 
-      {/* Transaction List */}
-      <div className="space-y-3">
-        {filteredTransactions.length === 0 ? (
-          <div className="text-center py-8">
-            <Filter className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-400">No transactions found for the selected filter.</p>
-          </div>
-        ) : (
-          filteredTransactions.map((tx) => {
-            const {body} = tx;
-            const {messages} = body;
-            const {from, to, value, data} = messages[0];
-            console.log("messages", messages[0]);
-            const type = getType(from) as 'send' | 'receive';
-            return (
-              <div
-                key={tx.txhash}
-                className="bg-gray-800/30 rounded-lg p-4 hover:bg-gray-800/50 transition-all duration-200 border border-gray-700/50"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start space-x-4">
-                    <div className="p-2 bg-gray-700/50 rounded-full">
-                      {getTransactionIcon(type)}
+      {!loading && !error && allTransactions.length === 0 && (
+        <div className="text-center py-8">
+          <p className="text-gray-400">No transactions found</p>
+        </div>
+      )}
+
+      {!loading && !error && allTransactions.length > 0 && (
+        <div className="overflow-x-auto">
+          <table className="min-w-full">
+            <thead>
+              <tr className="border-b border-gray-700">
+                <th className="text-left py-3 px-4 text-gray-300 font-medium">Hash</th>
+                <th className="text-left py-3 px-4 text-gray-300 font-medium">From</th>
+                <th className="text-left py-3 px-4 text-gray-300 font-medium">To</th>
+                <th className="text-left py-3 px-4 text-gray-300 font-medium">Value</th>
+                <th className="text-left py-3 px-4 text-gray-300 font-medium">Status</th>
+                <th className="text-left py-3 px-4 text-gray-300 font-medium">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {allTransactions.map((tx, index) => (
+                <tr key={`${tx.hash}-${index}`} className="border-b border-gray-800 hover:bg-gray-800/50">
+                  <td className="py-3 px-4">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-blue-300 font-mono text-sm">
+                        {formatAddress(tx.hash)}
+                      </span>
+                      <button
+                        onClick={() => copyToClipboard(tx.hash)}
+                        className="text-gray-400 hover:text-white transition-colors"
+                        title="Copy hash"
+                      >
+                        <Copy className="w-3 h-3" />
+                      </button>
                     </div>
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2 mb-1">
-                        <h3 className="font-medium text-white">
-                          {type === 'send' ? 'Sent' : 'Received'}
-                        </h3>
-                      </div>
-                      <p className="text-gray-400 text-sm mb-2">
-                        {type === 'send'
-                          ? `To ${data?.to ? data?.to.slice(0, 10) + '...' + data?.to.slice(-6) : '-'}`
-                          : `From ${data?.from ? data?.from.slice(0, 10) + '...' + data?.from.slice(-6) : '-'}`}
-                      </p>
-                      <div className="flex items-center space-x-4 text-xs text-gray-500">
-                        <span>{new Date(tx.timestamp).toLocaleString()}</span>
-                        <span className="capitalize">Confirmed</span>
-                      </div>
+                  </td>
+                  <td className="py-3 px-4">
+                    <span className="text-gray-300 font-mono text-sm">
+                      {formatAddress(tx.from)}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4">
+                    <span className="text-gray-300 font-mono text-sm">
+                      {formatAddress(tx.to)}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4">
+                    <span className="text-green-300 font-semibold">
+                      {formatValue(tx.value)} XFI
+                    </span>
+                  </td>
+                  <td className="py-3 px-4">
+                    <span className={`${getStatusColor(tx.status)} font-medium`}>
+                      {tx.status}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4">
+                    <div className="flex items-center space-x-2">
+                      <a
+                        href={getExplorerUrl(tx.hash)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-400 hover:text-blue-300 transition-colors"
+                        title="View on explorer"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                      </a>
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <div className={`font-medium ${
-                      type === 'send' ? 'text-red-400' : 'text-green-400'
-                    }`}>
-                      {type === 'send' ? '-' : '+'}
-                      {data ? (Number(data?.value) / 1e18).toFixed(4) : '0'} XFI
-                    </div>
-                    <a
-                      href={`https://test.xfiscan.com/tx/${tx.txhash}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-2 flex items-center space-x-1 text-purple-400 hover:text-purple-300 text-xs transition-colors"
-                    >
-                      <ExternalLink className="w-3 h-3" />
-                      <span>View on Explorer</span>
-                    </a>
-                  </div>
-                </div>
-              </div>
-            );
-          })
-        )}
-      </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 };
