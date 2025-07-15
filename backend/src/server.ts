@@ -15,6 +15,7 @@ import { priceDataRoutes } from "./routes/price-data.js";
 import dcaRoutes from "./routes/dca.js";
 import { PriceCacheService } from "./services/price-cache.js";
 import { DCAExecutorService } from "./services/dca-executor.js";
+import { CronService } from "./services/cronService.js";
 import { setCurrentUserId } from "./tools.js";
 import {setUserContext} from "./middleware/setUserContext.js"
 import mongoose from "mongoose";
@@ -280,6 +281,14 @@ const startServer = async () => {
       console.warn('⚠️ DCA executor failed to start (continuing without DCA):', dcaError);
     }
 
+    // Initialize cron service
+    try {
+      CronService.getInstance().init();
+      console.log('✅ Cron service initialized');
+    } catch (cronError) {
+      console.warn('⚠️ Cron service failed to start (continuing without cron):', cronError);
+    }
+
     // Initialize WebSocket server
     try {
       console.log('🔌 Attempting to initialize WebSocket server...');
@@ -307,6 +316,7 @@ const startServer = async () => {
 process.on('SIGTERM', () => {
   console.log('SIGTERM received, shutting down gracefully');
   DCAExecutorService.stopExecutor();
+  CronService.getInstance().stop();
   closeSocket();
   process.exit(0);
 });
@@ -314,6 +324,7 @@ process.on('SIGTERM', () => {
 process.on('SIGINT', () => {
   console.log('SIGINT received, shutting down gracefully');
   DCAExecutorService.stopExecutor();
+  CronService.getInstance().stop();
   closeSocket();
   process.exit(0);
 });

@@ -4,180 +4,13 @@ import { Header } from '../components/Header';
 import { TransactionHistory } from '../components/TransactionHistory';
 import { QuickActions } from '../components/QuickActions';
 import { DCAOrders } from '../components/DCAOrders';
+import { Portfolio } from '../components/Portfolio';
 import { useBackendWallet } from '../hooks/useBackendWallet';
 import { usePaymentLinks, PaymentLinkData } from '../hooks/usePaymentLinks';
 import { useWebSocket } from '../context/WebSocketContext';
 import { Wallet, Copy, ExternalLink, Trash2, Plus, RefreshCw, Filter, Link as LinkIcon, History, Zap, TrendingUp } from 'lucide-react';
 import { WalletConnection } from '../components/WalletConnection';
 import { WalletOverview } from '../components/WalletOverview';
-
-export const WalletPage = () => {
-  const { backendWallet, loading } = useBackendWallet();
-  const { isConnected, isConnecting } = useWebSocket();
-  const [activeTab, setActiveTab] = useState<'overview' | 'history' | 'actions' | 'payment-links' | 'dca-orders'>('overview');
-  
-  // Payment Links functionality
-  const {
-    paymentLinks,
-    stats,
-    pagination,
-    loading: paymentLinksLoading,
-    error: paymentLinksError,
-    fetchPaymentLinks,
-    deletePaymentLink,
-    nextPage,
-    prevPage,
-    goToPage,
-    refresh
-  } = usePaymentLinks();
-  
-  const [filter, setFilter] = useState<'all' | 'fixed' | 'global'>('all');
-  const [copySuccess, setCopySuccess] = useState<string | null>(null);
-
-  // Handle filter change
-  const handleFilterChange = (newFilter: 'all' | 'fixed' | 'global') => {
-    setFilter(newFilter);
-    fetchPaymentLinks(1, 10, newFilter);
-  };
-
-  // Copy to clipboard functionality
-  const copyToClipboard = async (text: string, linkId: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopySuccess(linkId);
-      setTimeout(() => setCopySuccess(null), 2000);
-    } catch (err) {
-      console.error('Failed to copy: ', err);
-    }
-  };
-
-  // Delete payment link
-  const handleDelete = async (linkId: string) => {
-    if (window.confirm('Are you sure you want to cancel this payment link?')) {
-      const success = await deletePaymentLink(linkId);
-      if (success) {
-        refresh();
-      }
-    }
-  };
-
-  // Tab configuration with responsive icons and labels
-  const tabs = [
-    { id: 'overview', label: 'Portfolio', shortLabel: 'Portfolio', icon: Wallet },
-    { id: 'history', label: 'Transaction History', shortLabel: 'History', icon: History },
-    { id: 'actions', label: 'Quick Actions', shortLabel: 'Actions', icon: Zap },
-    { id: 'payment-links', label: 'Payment Links', shortLabel: 'Links', icon: LinkIcon },
-    { id: 'dca-orders', label: 'DCA Orders', shortLabel: 'DCA', icon: TrendingUp },
-  ] as const;
-
-  return (
-    <div className="min-h-screen">
-      <Header />
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
-        {/* WebSocket Connection Status */}
-        <div className="mb-4 flex items-center justify-center">
-          {isConnecting ? (
-            <div className="flex items-center space-x-2 text-yellow-400 text-sm">
-              <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
-              <span>Connecting to real-time updates...</span>
-            </div>
-          ) : isConnected ? (
-            <div className="flex items-center space-x-2 text-green-400 text-sm">
-              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-              <span>Real-time updates connected</span>
-            </div>
-          ) : (
-            <div className="flex items-center space-x-2 text-gray-400 text-sm">
-              <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-              <span>Real-time updates unavailable (using polling)</span>
-            </div>
-          )}
-        </div>
-        
-        <div className="grid grid-cols-1  xl:grid-cols-3 gap-4 sm:gap-6">
-          {/* Wallet Overview - Full width on mobile, left column on desktop */}
-            <WalletConnection onConnect={() => {}} />
-          {/* Main Interface - Full width on mobile, right column on desktop */}
-          <div className="xl:col-span-2 order-2 xl:order-2">
-            <div className="bg-white/10 backdrop-blur-lg rounded-lg mt-14 sm:rounded-2xl border border-white/20 shadow-2xl">
-              {/* Responsive Tab Navigation */}
-              <div className="flex border-b border-white/10 overflow-x-auto scrollbar-hide">
-                {tabs.map((tab) => {
-                  const Icon = tab.icon;
-                  return (
-                <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
-                      className={`flex-1 min-w-0 py-3 sm:py-4 px-2 sm:px-4 text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
-                        activeTab === tab.id
-                      ? 'text-white border-b-2 border-purple-500 bg-purple-500/10'
-                      : 'text-gray-300 hover:text-white hover:bg-white/5'
-                  }`}
-                >
-                      <div className="flex items-center justify-center space-x-1 sm:space-x-2">
-                        <Icon className="w-3 h-3 sm:w-4 sm:h-4" />
-                        <span className="hidden sm:inline">{tab.label}</span>
-                        <span className="sm:hidden">{tab.shortLabel}</span>
-                  </div>
-                </button>
-                  );
-                })}
-              </div>
-
-              {/* Tab Content */}
-              <div className="p-3 sm:p-6">
-                {loading ? (
-                  <div className="text-center py-6 sm:py-8">
-                    <Wallet className="w-8 h-8 sm:w-12 sm:h-12 text-purple-400 mx-auto mb-4 animate-pulse" />
-                    <p className="text-sm sm:text-base text-gray-400">Loading Oni wallet...</p>
-                  </div>
-                ) : activeTab === 'overview' ? (
-                  <div className="text-center py-6 sm:py-8">
-                    <Wallet className="w-8 h-8 sm:w-12 sm:h-12 text-purple-400 mx-auto mb-4" />
-                    <h3 className="text-base sm:text-lg font-medium text-white mb-2">Wallet Overview</h3>
-                    <p className="text-sm sm:text-base text-gray-400 px-2">
-                      Your Oni wallet information is displayed {window.innerWidth >= 1280 ? 'in the left panel' : 'above'}. Use the tabs to view transaction history or perform quick actions.
-                    </p>
-                  </div>
-                ) : activeTab === 'history' ? (
-                  backendWallet ? (
-                    <TransactionHistory walletAddress={backendWallet} />
-                  ) : (
-                    <div className="text-center py-6 sm:py-8">
-                      <Wallet className="w-8 h-8 sm:w-12 sm:h-12 text-purple-400 mx-auto mb-4 animate-pulse" />
-                      <p className="text-sm sm:text-base text-gray-400">Loading Oni wallet...</p>
-                    </div>
-                  )
-                ) : activeTab === 'payment-links' ? (
-                  <PaymentLinksContent 
-                    paymentLinks={paymentLinks}
-                    stats={stats}
-                    pagination={pagination}
-                    loading={paymentLinksLoading}
-                    error={paymentLinksError}
-                    filter={filter}
-                    copySuccess={copySuccess}
-                    handleFilterChange={handleFilterChange}
-                    copyToClipboard={copyToClipboard}
-                    handleDelete={handleDelete}
-                    refresh={refresh}
-                    nextPage={nextPage}
-                    prevPage={prevPage}
-                    goToPage={goToPage}
-                  />
-                ) : activeTab === 'dca-orders' ? (
-                  <DCAOrders />
-                ) : (
-                  <QuickActions />
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 // Payment Links Content Component
 const PaymentLinksContent: React.FC<{
@@ -356,9 +189,9 @@ const PaymentLinksContent: React.FC<{
 
       {/* Filter Controls */}
       <div className="flex flex-wrap items-center gap-2">
-      <div className="flex items-center space-x-2">
-        <Filter size={14} className="text-gray-400" />
-        <span className="text-xs text-gray-400">Filter:</span>
+        <div className="flex items-center space-x-2">
+          <Filter size={14} className="text-gray-400" />
+          <span className="text-xs text-gray-400">Filter:</span>
         </div>
         <div className="flex space-x-1">
           {['all', 'fixed', 'global'].map((filterType) => (
@@ -379,74 +212,235 @@ const PaymentLinksContent: React.FC<{
 
       {/* Error Message */}
       {error && (
-        <div className="bg-red-500/20 border border-red-500/30 text-red-300 px-3 py-2 rounded text-sm">
-          {error}
+        <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+          <p className="text-red-400 text-sm">{error}</p>
         </div>
       )}
 
       {/* Payment Links Grid */}
-      {paymentLinks.length > 0 ? (
-        <>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
-            {paymentLinks.map((link) => (
-              <PaymentLinkCard key={link._id} link={link} />
+      {!loading && paymentLinks.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+          {paymentLinks.map((link) => (
+            <PaymentLinkCard key={link.linkId} link={link} />
+          ))}
+        </div>
+      )}
+
+      {/* Empty State */}
+      {!loading && paymentLinks.length === 0 && (
+        <div className="text-center py-8">
+          <LinkIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-400">No payment links found</p>
+        </div>
+      )}
+
+      {/* Pagination */}
+      {pagination && pagination.totalPages > 1 && (
+        <div className="flex justify-center items-center space-x-2 mt-6">
+          <button
+            onClick={prevPage}
+            disabled={pagination.currentPage === 1}
+            className="px-3 py-1 bg-white/10 text-white rounded hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Previous
+          </button>
+          
+          <div className="flex space-x-1">
+            {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((page) => (
+              <button
+                key={page}
+                onClick={() => goToPage(page)}
+                className={`px-3 py-1 rounded text-sm ${
+                  page === pagination.currentPage
+                    ? 'bg-purple-500 text-white'
+                    : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                }`}
+              >
+                {page}
+              </button>
             ))}
           </div>
+          
+          <button
+            onClick={nextPage}
+            disabled={pagination.currentPage === pagination.totalPages}
+            className="px-3 py-1 bg-white/10 text-white rounded hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Next
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
 
-          {/* Pagination */}
-          {pagination.totalPages > 1 && (
-            <div className="flex justify-center items-center space-x-2">
-              <button
-                onClick={prevPage}
-                disabled={!pagination.hasPrevPage}
-                className="px-2 py-1 bg-white/10 text-gray-300 rounded text-sm hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Prev
-              </button>
-              
-              <div className="flex space-x-1">
-                {[...Array(Math.min(pagination.totalPages, 5))].map((_, index) => {
-                  const page = index + 1;
-                  return (
-                    <button
-                      key={page}
-                      onClick={() => goToPage(page)}
-                      className={`px-2 py-1 rounded text-sm ${
-                        pagination.page === page
-                          ? 'bg-purple-500/30 text-purple-200'
-                          : 'bg-white/10 text-gray-300 hover:bg-white/20'
-                      }`}
-                    >
-                      {page}
-                    </button>
-                  );
-                })}
-              </div>
+export const WalletPage = () => {
+  const { backendWallet, loading } = useBackendWallet();
+  const { isConnected, isConnecting } = useWebSocket();
+  const [activeTab, setActiveTab] = useState<'overview' | 'history' | 'actions' | 'payment-links' | 'dca-orders'>('overview');
+  
+  // Payment Links functionality
+  const {
+    paymentLinks,
+    stats,
+    pagination,
+    loading: paymentLinksLoading,
+    error: paymentLinksError,
+    fetchPaymentLinks,
+    deletePaymentLink,
+    nextPage,
+    prevPage,
+    goToPage,
+    refresh
+  } = usePaymentLinks();
+  
+  const [filter, setFilter] = useState<'all' | 'fixed' | 'global'>('all');
+  const [copySuccess, setCopySuccess] = useState<string | null>(null);
 
-              <button
-                onClick={nextPage}
-                disabled={!pagination.hasNextPage}
-                className="px-2 py-1 bg-white/10 text-gray-300 rounded text-sm hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Next
-              </button>
+  // Handle filter change
+  const handleFilterChange = (newFilter: 'all' | 'fixed' | 'global') => {
+    setFilter(newFilter);
+    fetchPaymentLinks(1, 10, newFilter);
+  };
+
+  // Copy to clipboard functionality
+  const copyToClipboard = async (text: string, linkId: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopySuccess(linkId);
+      setTimeout(() => setCopySuccess(null), 2000);
+    } catch (err) {
+      console.error('Failed to copy: ', err);
+    }
+  };
+
+  // Delete payment link
+  const handleDelete = async (linkId: string) => {
+    if (window.confirm('Are you sure you want to cancel this payment link?')) {
+      const success = await deletePaymentLink(linkId);
+      if (success) {
+        refresh();
+      }
+    }
+  };
+
+  // Tab configuration with responsive icons and labels
+  const tabs = [
+    { id: 'overview', label: 'Wallet', shortLabel: 'Wallet', icon: Wallet },
+    { id: 'history', label: 'Transaction History', shortLabel: 'History', icon: History },
+    { id: 'actions', label: 'Quick Actions', shortLabel: 'Actions', icon: Zap },
+    { id: 'payment-links', label: 'Payment Links', shortLabel: 'Links', icon: LinkIcon },
+    { id: 'dca-orders', label: 'DCA Orders', shortLabel: 'DCA', icon: TrendingUp },
+  ] as const;
+
+  return (
+    <div className="min-h-screen">
+      <Header />
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6 h-[90vh] flex flex-col">
+        {/* WebSocket Connection Status */}
+        {/* <div className="mb-4 flex items-center justify-center flex-shrink-0">
+          {isConnecting ? (
+            <div className="flex items-center space-x-2 text-yellow-400 text-sm">
+              <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
+              <span>Connecting to real-time updates...</span>
+            </div>
+          ) : isConnected ? (
+            <div className="flex items-center space-x-2 text-green-400 text-sm">
+              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+              <span>Real-time updates connected</span>
+            </div>
+          ) : (
+            <div className="flex items-center space-x-2 text-gray-400 text-sm">
+              <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+              <span>Real-time updates unavailable (using polling)</span>
             </div>
           )}
-        </>
-      ) : (
-        !loading && (
-          <div className="text-center py-6 sm:py-8">
-            <Plus size={24} className="mx-auto text-gray-400 mb-4" />
-            <h4 className="text-sm font-medium text-white mb-2">No payment links found</h4>
-            <p className="text-xs text-gray-400 mb-4 px-4">
-              Create your first payment link to get started!
-            </p>
-            <p className="text-xs text-gray-500 px-4">
-              Use the AI interface to create fixed or global payment links.
-            </p>
+        </div>
+         */}
+        <div className="flex justify-center flex-1 min-h-0">
+          {/* Main Interface - Centered content with sidebar */}
+          <div className="w-full max-w-6xl h-full">
+            <div className="bg-white/10 backdrop-blur-lg rounded-lg sm:rounded-2xl border border-white/20 shadow-2xl h-full flex flex-col">
+              <div className="flex flex-1 min-h-0">
+                {/* Sidebar Navigation */}
+                <div className="w-64 bg-white/5 border-r border-white/10 rounded-l-lg flex-shrink-0">
+                  <div className="p-4 h-full flex flex-col">
+                    <h3 className="text-lg font-semibold text-white mb-4 flex-shrink-0">Navigation</h3>
+                    <nav className="space-y-2 flex-1">
+                      {tabs.map((tab) => {
+                        const Icon = tab.icon;
+                        return (
+                          <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id)}
+                            className={`w-full flex items-center space-x-3 px-3 py-3 rounded-lg text-sm font-medium transition-all ${
+                              activeTab === tab.id
+                                ? 'text-white bg-purple-500/20 border border-purple-500/30'
+                                : 'text-gray-300 hover:text-white hover:bg-white/10'
+                            }`}
+                          >
+                            <Icon className="w-5 h-5" />
+                            <span>{tab.label}</span>
+                          </button>
+                        );
+                      })}
+                    </nav>
+                  </div>
+                </div>
+
+                {/* Main Content */}
+                <div className="flex-1 p-6 overflow-y-auto">
+                {loading ? (
+                  <div className="text-center py-6 sm:py-8">
+                    <Wallet className="w-8 h-8 sm:w-12 sm:h-12 text-purple-400 mx-auto mb-4 animate-pulse" />
+                    <p className="text-sm sm:text-base text-gray-400">Loading Oni wallet...</p>
+                  </div>
+                ) : activeTab === 'overview' ? (
+                  backendWallet ? (
+                    <Portfolio walletAddress={backendWallet} />
+                  ) : (
+                    <div className="text-center py-6 sm:py-8">
+                      <Wallet className="w-8 h-8 sm:w-12 sm:h-12 text-purple-400 mx-auto mb-4 animate-pulse" />
+                      <p className="text-sm sm:text-base text-gray-400">Loading Oni wallet...</p>
+                    </div>
+                  )
+                ) : activeTab === 'history' ? (
+                  backendWallet ? (
+                    <TransactionHistory walletAddress={backendWallet} />
+                  ) : (
+                    <div className="text-center py-6 sm:py-8">
+                      <Wallet className="w-8 h-8 sm:w-12 sm:h-12 text-purple-400 mx-auto mb-4 animate-pulse" />
+                      <p className="text-sm sm:text-base text-gray-400">Loading Oni wallet...</p>
+                    </div>
+                  )
+                ) : activeTab === 'payment-links' ? (
+                  <PaymentLinksContent 
+                    paymentLinks={paymentLinks}
+                    stats={stats}
+                    pagination={pagination}
+                    loading={paymentLinksLoading}
+                    error={paymentLinksError}
+                    filter={filter}
+                    copySuccess={copySuccess}
+                    handleFilterChange={handleFilterChange}
+                    copyToClipboard={copyToClipboard}
+                    handleDelete={handleDelete}
+                    refresh={refresh}
+                    nextPage={nextPage}
+                    prevPage={prevPage}
+                    goToPage={goToPage}
+                  />
+                ) : activeTab === 'dca-orders' ? (
+                  <DCAOrders />
+                ) : (
+                  <QuickActions />
+                )}
+                </div>
+              </div>
+            </div>
           </div>
-        )
-      )}
-         </div>
-   );
- }; 
+        </div>
+      </div>
+    </div>
+  );
+}

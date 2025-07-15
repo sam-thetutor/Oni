@@ -11,10 +11,11 @@ import { RealTimeNotifications } from './components/RealTimeNotifications';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { Wallet as WalletType } from './types/wallet';
 import ErrorPage from './components/ErrorPage';
-import { LeaderboardPage } from './pages/LeaderboardPage';
+import LeaderboardPage from './pages/LeaderboardPage';
 import { AIInterface } from './components/AIInterface';
 import { Footer } from './components/Footer';
 import oniLogo from './assets/logos.png';
+import { startLeaderboardAutoRefresh, stopLeaderboardAutoRefresh } from './stores/leaderboardStore';
 
 function App() {
   const { authenticated,user, ready } = usePrivy();
@@ -52,6 +53,15 @@ function App() {
 
     initializeWallet();
   }, [authenticated, wallets, ready]);
+
+  // Initialize leaderboard auto-refresh
+  useEffect(() => {
+    startLeaderboardAutoRefresh();
+    
+    return () => {
+      stopLeaderboardAutoRefresh();
+    };
+  }, []);
 
   if (!ready) {
     return (

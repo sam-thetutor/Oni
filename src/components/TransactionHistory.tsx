@@ -29,9 +29,10 @@ interface Transaction {
   value: string;
   status: string;
   timestamp: string;
+  type: 'sent' | 'received';
 }
 
-export const TransactionHistory: React.FC = () => {
+export const TransactionHistory: React.FC<{ walletAddress: string }> = ({ walletAddress }) => {
   const { transactions: realTimeTransactions, isConnected, refreshTransactions } = useRealTimeWallet();
   const { onTransactionRefresh } = useRefresh();
   const [transactions, setTransactions] = React.useState<Transaction[]>([]);
@@ -43,7 +44,7 @@ export const TransactionHistory: React.FC = () => {
     setError(null);
     try {
       // Use the XFI scan API directly
-      const response = await fetch('https://test.xfiscan.com/api/1.0/txs?address=0x85a4b09fb0788f1c549a68dc2edae3f97aeb5dd7&page=1&limit=20');
+      const response = await fetch(`https://test.xfiscan.com/api/1.0/txs?address=${walletAddress}&page=1&limit=20`);
       const data = await response.json();
       
       if (data.docs) {
@@ -62,13 +63,20 @@ export const TransactionHistory: React.FC = () => {
             // Convert wei to XFI (1 XFI = 10^18 wei)
             const valueInXFI = (parseInt(value) / Math.pow(10, 18)).toString();
             
+            // Determine if this is a sent or received transaction
+            // For now, we'll use a placeholder address - you may want to get the user's address from context
+            const userAddress = walletAddress.toLowerCase();
+            const isReceived = to.toLowerCase() === userAddress;
+            const isSent = from.toLowerCase() === userAddress;
+            
             return {
               hash: tx.evm_txhashes[0] || tx.txhash,
               from: from.toLowerCase(),
               to: to.toLowerCase(),
               value: valueInXFI,
               status: tx.code === 0 ? 'success' : 'failed',
-              timestamp: tx.timestamp
+              timestamp: tx.timestamp,
+              type: isReceived ? 'received' : isSent ? 'sent' : 'sent' // Default to sent if unclear
             };
           })
           .filter((tx: any) => tx.from && tx.to && tx.value !== '0'); // Filter out empty transactions
@@ -83,7 +91,7 @@ export const TransactionHistory: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [walletAddress]);
 
   // Register refresh function with global context
   useEffect(() => {
@@ -96,7 +104,7 @@ export const TransactionHistory: React.FC = () => {
   // Initial load
   React.useEffect(() => {
     fetchTransactions();
-  }, [fetchTransactions]);
+  }, [fetchTransactions, walletAddress]);
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -124,6 +132,28 @@ export const TransactionHistory: React.FC = () => {
     }
   };
 
+  const getTransactionTypeColor = (type?: 'sent' | 'received') => {
+    switch (type) {
+      case 'received':
+        return 'text-green-400';
+      case 'sent':
+        return 'text-red-400';
+      default:
+        return 'text-gray-400';
+    }
+  };
+
+  const getTransactionTypeIcon = (type?: 'sent' | 'received') => {
+    switch (type) {
+      case 'received':
+        return '↓';
+      case 'sent':
+        return '↑';
+      default:
+        return '→';
+    }
+  };
+
   const getExplorerUrl = (hash: string) => {
     return `https://test.xfiscan.com/tx/${hash}`;
   };
@@ -135,11 +165,28 @@ export const TransactionHistory: React.FC = () => {
     const unique = combined.filter((tx, index, self) => 
       index === self.findIndex(t => t.hash === tx.hash)
     );
-    return unique.slice(0, 20); // Keep latest 20
-  }, [realTimeTransactions, transactions]);
+    
+    // Ensure all transactions have a type field
+    const processedTransactions = unique.map(tx => {
+      if (!('type' in tx) || !tx.type) {
+        // For real-time transactions that might not have type, try to determine it
+        const userAddress = walletAddress.toLowerCase();
+        const isReceived = tx.to.toLowerCase() === userAddress;
+        const isSent = tx.from.toLowerCase() === userAddress;
+        
+        return {
+          ...tx,
+          type: isReceived ? 'received' : isSent ? 'sent' : 'sent' // Default to sent if unclear
+        } as Transaction;
+      }
+      return tx as Transaction;
+    });
+    
+    return processedTransactions.slice(0, 20); // Keep latest 20
+  }, [realTimeTransactions, transactions, walletAddress]);
 
   return (
-    <div className="bg-gray-900 rounded-lg shadow-lg p-6 w-full max-w-4xl mx-auto">
+    <div className="w-full">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-semibold text-white">Transaction History</h2>
         <div className="flex items-center space-x-2">
@@ -190,6 +237,7 @@ export const TransactionHistory: React.FC = () => {
           <table className="min-w-full">
             <thead>
               <tr className="border-b border-gray-700">
+                <th className="text-left py-3 px-4 text-gray-300 font-medium">Type</th>
                 <th className="text-left py-3 px-4 text-gray-300 font-medium">Hash</th>
                 <th className="text-left py-3 px-4 text-gray-300 font-medium">From</th>
                 <th className="text-left py-3 px-4 text-gray-300 font-medium">To</th>
@@ -201,6 +249,16 @@ export const TransactionHistory: React.FC = () => {
             <tbody>
               {allTransactions.map((tx, index) => (
                 <tr key={`${tx.hash}-${index}`} className="border-b border-gray-800 hover:bg-gray-800/50">
+                  <td className="py-3 px-4">
+                    <div className="flex items-center space-x-2">
+                      <span className={`text-lg font-bold ${getTransactionTypeColor(tx.type)}`}>
+                        {getTransactionTypeIcon(tx.type)}
+                      </span>
+                      <span className={`text-sm font-medium ${getTransactionTypeColor(tx.type)}`}>
+                        {tx.type ? tx.type.charAt(0).toUpperCase() + tx.type.slice(1) : 'Unknown'}
+                      </span>
+                    </div>
+                  </td>
                   <td className="py-3 px-4">
                     <div className="flex items-center space-x-2">
                       <span className="text-blue-300 font-mono text-sm">
@@ -226,7 +284,7 @@ export const TransactionHistory: React.FC = () => {
                     </span>
                   </td>
                   <td className="py-3 px-4">
-                    <span className="text-green-300 font-semibold">
+                    <span className={`text-sm ${tx.type === 'received' ? 'text-green-300' : tx.type === 'sent' ? 'text-red-300' : 'text-gray-300'}`}>
                       {formatValue(tx.value)} XFI
                     </span>
                   </td>
