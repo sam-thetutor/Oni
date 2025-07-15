@@ -156,34 +156,21 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({
 
               <div className="bg-gray-800/50 rounded-lg p-3 text-left mb-4">
                 <p className="text-sm text-gray-400">Address:</p>
-                {!loading && backendWallet ? (
-                  <div className="flex items-center space-x-2">
-                    <div className="h-5 w-32 bg-gray-700 rounded animate-pulse"></div>
-                  </div>
-                ) : (
-                  <p className="text-white font-mono text-sm break-all">
-                    {/* shorten the address to 4 characters from the start and 4 characters from the end */}
-                    {backendWallet?.slice(0, 4) +
-                      "..." +
-                      backendWallet?.slice(-4)}
-                  </p>
-                )}
+                <p className="text-white font-mono text-sm break-all">
+                  {/* shorten the address to 4 characters from the start and 4 characters from the end */}
+                  {backendWallet?.slice(0, 4) +
+                    "..." +
+                    backendWallet?.slice(-4)}
+                </p>
               </div>
 
               <div className="bg-gray-800/50 rounded-lg p-3 text-left mb-4">
                 <div className="flex justify-between items-center mb-2">
                   <div>
                     <p className="text-sm text-gray-400">XFI Balance:</p>
-                    {isLoading ? (
-                      <div className="flex items-center space-x-2">
-                        <div className="h-6 w-16 bg-gray-700 rounded animate-pulse"></div>
-                        <span className="text-gray-500 text-sm">XFI</span>
-                      </div>
-                    ) : (
-                      <p className="text-white text-lg font-semibold">
-                        {xfi.toFixed(4)} XFI
-                      </p>
-                    )}
+                    <p className="text-white text-lg font-semibold">
+                      {isLoading ? "..." : xfi.toFixed(4)} XFI
+                    </p>
                   </div>
                   <button
                     onClick={handleRefreshBalance}
@@ -195,31 +182,17 @@ export const WalletConnection: React.FC<WalletConnectionProps> = ({
                     />
                   </button>
                 </div>
-                <div className="mb-2">
+                <div>
                   <p className="text-sm text-gray-400">MPX Balance:</p>
-                  {isLoading ? (
-                    <div className="flex items-center space-x-2">
-                      <div className="h-5 w-14 bg-gray-700 rounded animate-pulse"></div>
-                      <span className="text-gray-500 text-sm">MPX</span>
-                    </div>
-                  ) : (
-                    <p className="text-white text-md font-semibold">
-                      {mpx.toFixed(4)} MPX
-                    </p>
-                  )}
+                  <p className="text-white text-md font-semibold">
+                    {isLoading ? "..." : mpx.toFixed(4)} MPX
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-400">USDC Balance:</p>
-                  {isLoading ? (
-                    <div className="flex items-center space-x-2">
-                      <div className="h-5 w-14 bg-gray-700 rounded animate-pulse"></div>
-                      <span className="text-gray-500 text-sm">USDC</span>
-                    </div>
-                  ) : (
-                    <p className="text-white text-md font-semibold">
-                      {tUSDC.toFixed(4)} USDC
-                    </p>
-                  )}
+                  <p className="text-white text-md font-semibold">
+                    {isLoading ? "..." : tUSDC.toFixed(4)} USDC
+                  </p>
                 </div>
               </div>
 

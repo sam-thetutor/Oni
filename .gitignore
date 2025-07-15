@@ -24,3 +24,7 @@ dist-ssr
 *.sw?
 .env
 .vercel
+
+# Ignore environment variable files
+.env
+.env.*
