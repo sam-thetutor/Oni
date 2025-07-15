@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { ArrowUpRight, ArrowDownLeft, RotateCcw, ExternalLink, Filter } from 'lucide-react';
+import { ArrowUpRight, ArrowDownLeft, RotateCcw, ExternalLink, Filter, RefreshCw } from 'lucide-react';
+import { useRealTimeWallet } from '../hooks/useRealTimeWallet';
 
 interface TransactionHistoryProps {
   walletAddress: string | null;
@@ -27,6 +28,7 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({ walletAd
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'send' | 'receive'>('all');
+  const { transactions: realTimeTransactions, isConnected, refreshTransactions } = useRealTimeWallet();
 
   useEffect(() => {
     if (!walletAddress) return;
@@ -81,6 +83,37 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({ walletAd
 
   return (
     <div className="space-y-6">
+      {/* Header with Real-time Status */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          <h3 className="text-lg font-semibold text-white">Transaction History</h3>
+          {isConnected && (
+            <div className="flex items-center space-x-1 text-green-400 text-xs">
+              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+              <span>Live</span>
+            </div>
+          )}
+        </div>
+        <button
+          onClick={refreshTransactions}
+          disabled={loading}
+          className="p-2 text-gray-400 hover:text-white transition-colors disabled:opacity-50"
+          title="Refresh transactions"
+        >
+          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+        </button>
+      </div>
+
+      {/* Real-time Transaction Notifications */}
+      {realTimeTransactions.length > 0 && (
+        <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
+          <div className="flex items-center space-x-2 text-blue-400 text-sm">
+            <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+            <span>New real-time transactions available</span>
+          </div>
+        </div>
+      )}
+
       {/* Filter Tabs */}
       <div className="flex space-x-1 bg-gray-800/50 rounded-lg p-1">
         {[

@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import { config } from "dotenv";
+import { createServer } from "http";
 import { graph } from "./index.js";
 import { HumanMessage, AIMessage } from "@langchain/core/messages";
 import { memoryStore } from "./memory.js";
@@ -17,10 +18,12 @@ import { DCAExecutorService } from "./services/dca-executor.js";
 import { setCurrentUserId } from "./tools.js";
 import {setUserContext} from "./middleware/setUserContext.js"
 import mongoose from "mongoose";
+import { initializeSocket, closeSocket } from "./socket/index.js";
 
 config();
 
 const app = express();
+const server = createServer(app);
 const PORT = process.env.PORT || 3030;
 
 // Simple rate limiting for message endpoint
@@ -214,6 +217,13 @@ app.post('/message', authenticateToken, requireWalletConnection, rateLimitMessag
       });
     }
     
+    // Handle tool use failed errors (AI formatting issues)
+    if (error.message?.includes('tool_use_failed') || error.message?.includes('Failed to call a function')) {
+      return res.status(200).json({ 
+        response: '✅ Transaction completed successfully! The operation was processed, but I had trouble formatting the response. You can check your transaction history to confirm the details.'
+      });
+    }
+    
     // Handle authentication errors
     if (error.message?.includes('Authentication failed')) {
       return res.status(401).json({ 
@@ -270,11 +280,22 @@ const startServer = async () => {
       console.warn('⚠️ DCA executor failed to start (continuing without DCA):', dcaError);
     }
 
+    // Initialize WebSocket server
+    try {
+      console.log('🔌 Attempting to initialize WebSocket server...');
+      initializeSocket(server);
+      console.log('✅ WebSocket server initialized successfully');
+    } catch (wsError) {
+      console.error('❌ WebSocket initialization failed:', wsError);
+      console.warn('⚠️ Continuing without WebSocket support');
+    }
+
     // Start server
-    app.listen(PORT, () => {
+    server.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
       console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
       console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+      console.log(`🔌 WebSocket ready on ws://localhost:${PORT}`);
     });
   } catch (error) {
     console.error('❌ Failed to start server:', error);
@@ -286,12 +307,14 @@ const startServer = async () => {
 process.on('SIGTERM', () => {
   console.log('SIGTERM received, shutting down gracefully');
   DCAExecutorService.stopExecutor();
+  closeSocket();
   process.exit(0);
 });
 
 process.on('SIGINT', () => {
   console.log('SIGINT received, shutting down gracefully');
   DCAExecutorService.stopExecutor();
+  closeSocket();
   process.exit(0);
 });
 

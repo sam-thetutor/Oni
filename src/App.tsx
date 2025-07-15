@@ -5,6 +5,8 @@ import { WalletPage } from './pages/WalletPage';
 import PayLinkPage from './pages/PayLinkPage';
 import GlobalPayLinkPage from './pages/GlobalPayLinkPage';
 import { BackendProvider } from './context/BackendContext';
+import { WebSocketProvider } from './context/WebSocketContext';
+import { RealTimeNotifications } from './components/RealTimeNotifications';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { Wallet as WalletType } from './types/wallet';
 import ErrorPage from './components/ErrorPage';
@@ -63,6 +65,7 @@ function App() {
 
   return (
     <BackendProvider>
+      <WebSocketProvider>
         <div className="min-h-screen bg-main-gradient font-mono text-text flex flex-col">
           <div className="absolute inset-0 opacity-20"></div>
           {/* <Header /> */}
@@ -78,7 +81,9 @@ function App() {
           </Routes>
           </main>
           <Footer />
+          <RealTimeNotifications />
         </div>
+      </WebSocketProvider>
     </BackendProvider>
   );
 }

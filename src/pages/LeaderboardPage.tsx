@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Header } from '../components/Header';
 import { Trophy, Medal, Award, TrendingUp } from 'lucide-react';
 import { BACKEND_URL } from '../utils/constants';
+import { useRealTimeWallet } from '../hooks/useRealTimeWallet';
 
 interface LeaderboardEntry {
   rank: number;
@@ -15,6 +16,7 @@ export const LeaderboardPage: React.FC = () => {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { isConnected, testConnection } = useRealTimeWallet();
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
@@ -72,6 +74,27 @@ export const LeaderboardPage: React.FC = () => {
         <div className="text-center mb-6 sm:mb-8">
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-2">🏆 Leaderboard</h2>
           <p className="text-sm sm:text-base text-gray-400">Top performers in the CrossFi ecosystem</p>
+          <div className="mt-4 flex justify-center space-x-4">
+            <div className="flex items-center space-x-2">
+              {isConnected ? (
+                <div className="flex items-center space-x-1 text-green-400 text-xs">
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                  <span>WebSocket Connected</span>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-1 text-red-400 text-xs">
+                  <div className="w-2 h-2 bg-red-400 rounded-full"></div>
+                  <span>WebSocket Disconnected</span>
+                </div>
+              )}
+            </div>
+            <button
+              onClick={testConnection}
+              className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors"
+            >
+              Test WebSocket
+            </button>
+          </div>
         </div>
 
         {loading ? (

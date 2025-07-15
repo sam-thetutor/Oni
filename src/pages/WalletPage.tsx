@@ -6,12 +6,14 @@ import { QuickActions } from '../components/QuickActions';
 import { DCAOrders } from '../components/DCAOrders';
 import { useBackendWallet } from '../hooks/useBackendWallet';
 import { usePaymentLinks, PaymentLinkData } from '../hooks/usePaymentLinks';
+import { useWebSocket } from '../context/WebSocketContext';
 import { Wallet, Copy, ExternalLink, Trash2, Plus, RefreshCw, Filter, Link as LinkIcon, History, Zap, TrendingUp } from 'lucide-react';
 import { WalletConnection } from '../components/WalletConnection';
 import { WalletOverview } from '../components/WalletOverview';
 
 export const WalletPage = () => {
   const { backendWallet, loading } = useBackendWallet();
+  const { isConnected, isConnecting } = useWebSocket();
   const [activeTab, setActiveTab] = useState<'overview' | 'history' | 'actions' | 'payment-links' | 'dca-orders'>('overview');
   
   // Payment Links functionality
@@ -72,6 +74,26 @@ export const WalletPage = () => {
     <div className="min-h-screen">
       <Header />
       <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
+        {/* WebSocket Connection Status */}
+        <div className="mb-4 flex items-center justify-center">
+          {isConnecting ? (
+            <div className="flex items-center space-x-2 text-yellow-400 text-sm">
+              <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
+              <span>Connecting to real-time updates...</span>
+            </div>
+          ) : isConnected ? (
+            <div className="flex items-center space-x-2 text-green-400 text-sm">
+              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+              <span>Real-time updates connected</span>
+            </div>
+          ) : (
+            <div className="flex items-center space-x-2 text-gray-400 text-sm">
+              <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+              <span>Real-time updates unavailable (using polling)</span>
+            </div>
+          )}
+        </div>
+        
         <div className="grid grid-cols-1  xl:grid-cols-3 gap-4 sm:gap-6">
           {/* Wallet Overview - Full width on mobile, left column on desktop */}
             <WalletConnection onConnect={() => {}} />

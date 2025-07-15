@@ -92,7 +92,8 @@ export const useBackend = (): BackendContextType => {
     };
 
     // Make the request
-    const response = await fetch(`${url}`, {
+    const fullUrl = url.startsWith('http') ? url : `${BACKEND_URL}${url}`;
+    const response = await fetch(fullUrl, {
       ...options,
       headers,
     });

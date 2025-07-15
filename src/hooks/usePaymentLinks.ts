@@ -103,6 +103,14 @@ export const usePaymentLinks = () => {
       });
 
       const response = await authFetch(`${BACKEND_URL}/api/user/payment-links?${params}`);
+      
+      // Check if response is JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.error('Response is not JSON:', contentType);
+        throw new Error('Backend returned non-JSON response. Please check if the backend is running.');
+      }
+      
       const data: PaymentLinksResponse = await response.json();
       console.log("data", data);
 
@@ -125,6 +133,14 @@ export const usePaymentLinks = () => {
   const fetchStats = useCallback(async () => {
     try {
       const response = await authFetch('/api/user/payment-links/stats');
+      
+      // Check if response is JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.error('Response is not JSON:', contentType);
+        throw new Error('Backend returned non-JSON response. Please check if the backend is running.');
+      }
+      
       const data: PaymentLinkStatsResponse = await response.json();
       console.log("data here ", data);
 
@@ -135,6 +151,7 @@ export const usePaymentLinks = () => {
       }
     } catch (err) {
       console.error('Error fetching payment link stats:', err);
+      // Don't set error state for stats as it's not critical
     }
   }, [authFetch]);
 
