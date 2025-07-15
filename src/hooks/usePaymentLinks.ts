@@ -126,6 +126,7 @@ export const usePaymentLinks = () => {
     try {
       const response = await authFetch('/api/user/payment-links/stats');
       const data: PaymentLinkStatsResponse = await response.json();
+      console.log("data here ", data);
 
       if (data.success) {
         setStats(data.data);

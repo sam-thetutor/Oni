@@ -113,7 +113,7 @@ export const LeaderboardPage: React.FC = () => {
                   </div>
                   <div className="flex items-center justify-between text-xs text-gray-400">
                     <span>Total Volume</span>
-                    <span className="text-yellow-200 font-semibold">{entry.totalVolume} XFI</span>
+                    <span className="text-yellow-200 font-semibold">{entry.totalVolume.toFixed(3)} XFI</span>
                   </div>
                 </div>
               ))}
@@ -159,7 +159,7 @@ export const LeaderboardPage: React.FC = () => {
                         </div>
                       </td>
                       <td className="px-4 lg:px-6 py-3 text-yellow-200 font-semibold text-sm lg:text-base">
-                        {entry.totalVolume}
+                        {entry.totalVolume.toFixed(3)}
                       </td>
                   </tr>
                 ))}
@@ -183,7 +183,7 @@ export const LeaderboardPage: React.FC = () => {
                   </div>
                   <div className="col-span-2 sm:col-span-1">
                     <div className="text-lg sm:text-xl font-bold text-yellow-300">
-                      {leaderboard.reduce((sum, entry) => sum + entry.totalVolume, 0).toFixed(2)}
+                      {leaderboard.reduce((sum, entry) => sum + entry.totalVolume, 0).toFixed(3)}
                     </div>
                     <div className="text-xs sm:text-sm text-gray-400">Total Volume (XFI)</div>
                   </div>
