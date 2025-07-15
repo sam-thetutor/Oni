@@ -7,6 +7,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Portfolio Tab in Wallet Page**: New portfolio overview displaying backend wallet address and token balances
+  - Copiable wallet address with visual feedback
+  - Real-time XFI, MPX, and tUSDC balance display
+  - Manual refresh functionality for balances
+  - Loading states and error handling for balance fetching
+- **Zustand Store for Leaderboard Caching**: Implemented intelligent caching system for leaderboard data
+  - 5-minute automatic refresh intervals for both all-time and weekly leaderboards
+  - Smart caching to prevent unnecessary API calls
+  - Centralized state management for leaderboard data
+  - Auto-refresh initialization on app startup
+- **Weekly Leaderboard Implementation**: Complete weekly leaderboard system
+  - Countdown timer to next weekly reset (Sundays at 00:00 UTC)
+  - Weekly stats display (participants, volume, top score)
+  - Responsive design for mobile and desktop
+  - Real-time data updates via Zustand store
+- **Backend Weekly Leaderboard API**: New API endpoint for weekly leaderboard data
+  - `/api/gamification/weekly-leaderboard` endpoint
+  - Weekly points and volume tracking
+  - Weekly stats calculation and reset functionality
+
+### Changed
+- **Wallet Page Navigation**: Updated sidebar navigation with "Wallet" tab instead of "Portfolio"
+- **Leaderboard Data Management**: Migrated from local state to Zustand store for better performance
+- **Weekly Leaderboard Component**: Refactored to use centralized state management
+- **App Initialization**: Added leaderboard auto-refresh initialization on app startup
+
+### Fixed
+- **JSX Closing Tag Error**: Fixed missing JSX fragment closing tag in LeaderboardPage.tsx
+- **Weekly Leaderboard 404 Error**: Resolved missing API endpoint by adding weekly-leaderboard route to backend
+- **Null Value Handling**: Fixed `.toFixed()` errors on null values in WeeklyLeaderboard component
+- **Import/Export Mismatch**: Fixed default export vs named export issue in LeaderboardPage
+- **Backend Compilation Issues**: Manually patched compiled JavaScript files to include missing weekly leaderboard functionality
+
+### Technical Improvements
+- **Performance Optimization**: Reduced API calls through intelligent caching
+- **Error Handling**: Enhanced error states and retry functionality for leaderboard data
+- **State Management**: Centralized leaderboard state with Zustand
+- **Code Organization**: Better separation of concerns with dedicated store and components
+
 ## [1.1.0] - 2025-07-15
 
 ### Added
