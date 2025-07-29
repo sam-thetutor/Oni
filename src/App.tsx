@@ -89,6 +89,7 @@ function AppContent() {
                   <Route path="/leaderboard" element={<LeaderboardPage />} />
                   <Route path="/litepaper" element={<LitepaperPage />} />
                   <Route path="/pay/:linkId" element={<PayLinkPage />} />
+                  <Route path="/paylink/:linkId" element={<PayLinkPage />} />
                   <Route path="/global/:linkId" element={<GlobalPayLinkPage />} />
                 </Routes>
               </main>
