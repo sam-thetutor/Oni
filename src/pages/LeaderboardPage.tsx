@@ -104,14 +104,14 @@ export default function LeaderboardPage() {
             </div>
           </div>
 
-          <div className="mt-6 flex justify-center">
+          {/* <div className="mt-6 flex justify-center">
             <button
               onClick={testConnection}
               className="px-4 py-2 bg-green-400/10 hover:bg-green-400/20 border border-green-400/30 text-green-400 text-sm rounded-lg transition-all duration-200 font-mono"
             >
               Test WebSocket
             </button>
-          </div>
+          </div> */}
         </div>
 
         {activeTab === 'weekly' ? (

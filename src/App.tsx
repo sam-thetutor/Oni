@@ -59,8 +59,7 @@ function AppContent() {
           <div className="space-y-2 text-green-300 font-mono">
             <p>Initializing Oni Platform...</p>
             <p className="text-sm opacity-70">Connecting to CrossFi Network</p>
-            <p className="text-sm opacity-50">Loading AI Assistant</p>
-            <p className="text-sm opacity-30">Preparing DeFi Tools</p>
+             <p className="text-sm opacity-30">Preparing DeFi Tools</p>
           </div>
 
           {/* Progress Bar */}

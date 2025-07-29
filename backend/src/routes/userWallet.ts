@@ -10,7 +10,7 @@ interface AuthenticatedRequest extends Request {
 
 const router = express.Router();
 
-// GET /api/userWallet - Get the backend wallet address for the authenticated user
+// GET /api/userWallet - Get the Oni Wallet address for the authenticated user
 router.get('/', authenticateToken, async (req: AuthenticatedRequest, res) => {
   try {
     const dbUser = req.user?.dbUser;

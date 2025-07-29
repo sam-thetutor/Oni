@@ -47,7 +47,7 @@ export const Portfolio: React.FC<PortfolioProps> = ({ walletAddress }) => {
       <div className="bg-white/5 rounded-lg border border-white/10 p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h4 className="text-sm font-medium text-gray-400 mb-2">Backend Wallet Address</h4>
+            <h4 className="text-sm font-medium text-gray-400 mb-2">Oni Wallet Address</h4>
             <div className="flex items-center space-x-3">
               <Wallet className="w-5 h-5 text-purple-400" />
               <span className="font-mono text-white text-lg">{formatAddress(walletAddress)}</span>
