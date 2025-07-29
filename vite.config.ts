@@ -6,6 +6,12 @@ export default defineConfig({
   plugins: [react()],
   optimizeDeps: {
     exclude: ['lucide-react'],
+    include: ['react', 'react-dom'],
   },
-  
+  resolve: {
+    alias: {
+      'react': 'react',
+      'react-dom': 'react-dom',
+    },
+  },
 });

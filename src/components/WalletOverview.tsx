@@ -18,6 +18,13 @@ export const WalletOverview: React.FC<WalletOverviewProps> = ({ walletAddress })
   const { xfi: fallbackBalance, isLoading: balanceLoading, refreshBalances: refetchBalance } = useWalletBalance(address);
   const { onWalletRefresh } = useRefresh();
   
+  // Force refresh when address changes
+  useEffect(() => {
+    if (address) {
+      refetchBalance();
+    }
+  }, [address, refetchBalance]);
+  
   console.log(backendWallet);
 
   // Use real-time balance if available, otherwise fall back to API balance

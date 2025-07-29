@@ -1,38 +1,50 @@
+import { CHAIN_ID, RPC_URL, EXPLORER_URL, IS_PRODUCTION } from '../utils/constants';
 
+// Environment-aware CrossFi chain configuration
 const crossfi = {
-  id: 4157,
-  name: 'Crossfi Testnet',
+  id: CHAIN_ID,
+  name: IS_PRODUCTION ? 'CrossFi Mainnet' : 'CrossFi Testnet',
+  network: 'crossfi',
+  nativeCurrency: {
+    decimals: 18,
+    name: 'CrossFi',
+    symbol: 'XFI',
+  },
   rpcUrls: {
-    default: { http: ['https://rpc.testnet.ms'] }
+    default: {
+      http: [RPC_URL],
+    },
+    public: {
+      http: [RPC_URL],
+    },
   },
   blockExplorers: {
-    default: { name: 'Crossfi Testnet Explorer', url: 'https://test.xfiscan.com' }
+    default: {
+      name: IS_PRODUCTION ? 'CrossFi Explorer' : 'CrossFi Testnet Explorer',
+      url: EXPLORER_URL,
+    },
   },
-  nativeCurrency: {
-    name: 'Crossfi',
-    symbol: 'XFI',
-    decimals: 18,
-  },
-} as const;
+};
 
-export const privyConfig = {
-  appId:  'cmcp9doki0072k30m7wxy5loa',
+const appId = import.meta.env.VITE_PRIVY_APP_ID || 'cmcp9doki0072k30m7wxy5loa';
+
+// Debug logging
+console.log('🔧 Privy Configuration Debug:');
+console.log('  - App ID:', appId);
+console.log('  - App ID length:', appId.length);
+console.log('  - Environment:', import.meta.env.VITE_ENVIRONMENT);
+
+export const PrivyConfig = {
+  appId,
   config: {
-    loginMethods: ['wallet'] as ('wallet')[],
+    loginMethods: ['wallet', 'email'],
+    appearance: {
+      theme: 'dark' as const,
+      accentColor: '#10b981' as const,
+      showWalletLoginFirst: true,
+    },
     defaultChain: crossfi,
     supportedChains: [crossfi],
   },
-  defaultChain: crossfi,
-  appearance: {
-    accentColor: "#6A6FF5",
-    theme: "#FFFFFF",
-    logo: "https://auth.privy.io/logos/privy-logo.png",
-    walletChainType: "ethereum-only",
-  },
-  embeddedWallets: {
-    ethereum: {
-      createOnLogin: 'users-without-wallets'
-    }
-  }
 };
    

@@ -47,67 +47,67 @@ export default function LeaderboardPage() {
       case 3:
         return <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-orange-400" />;
       default:
-        return <span className="w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center text-purple-300 font-bold text-sm sm:text-base">#{rank}</span>;
+        return <span className="w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center text-green-300 font-bold text-sm sm:text-base">#{rank}</span>;
     }
   };
 
   const getRankColors = (rank: number) => {
     switch (rank) {
       case 1:
-        return "border-yellow-400/30 bg-gradient-to-r from-yellow-500/10 to-yellow-600/5";
+        return "border-yellow-400/30 bg-black/20 backdrop-blur-xl";
       case 2:
-        return "border-gray-300/30 bg-gradient-to-r from-gray-400/10 to-gray-500/5";
+        return "border-gray-300/30 bg-black/20 backdrop-blur-xl";
       case 3:
-        return "border-orange-400/30 bg-gradient-to-r from-orange-500/10 to-orange-600/5";
+        return "border-orange-400/30 bg-black/20 backdrop-blur-xl";
       default:
-        return "border-gray-700/50 bg-gray-800/30";
+        return "border-green-400/30 bg-black/20 backdrop-blur-xl";
     }
   };
 
   return (
-    <>
+    <div className="min-h-screen relative">
       <Header />
-      <div className="min-h-screen w-full font-mono text-text max-w-5xl mx-auto py-6 sm:py-10 px-3 sm:px-4">
-        <div className="text-center mb-6 sm:mb-8">
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-2">🏆 Leaderboard</h2>
-          <p className="text-sm sm:text-base text-gray-400">Top performers in the CrossFi ecosystem</p>
+      <div className="relative z-10 container mx-auto px-4 py-16">
+        <div className="text-center mb-12">
+          <h2 className="text-4xl md:text-5xl font-bold text-green-400 mb-4 font-mono">🏆 Leaderboard</h2>
+          <p className="text-xl text-green-300 max-w-2xl mx-auto font-mono">Top performers in the CrossFi ecosystem</p>
           
           {/* Tab Navigation */}
-          <div className="mt-6 flex justify-center">
-            <div className="bg-white/10 backdrop-blur-lg rounded-lg border border-white/20 p-1">
+          <div className="mt-8 flex justify-center">
+            <div className="bg-black/20 backdrop-blur-xl rounded-xl border-2 border-green-400/30 p-1">
               <button
                 onClick={() => setActiveTab('all-time')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                className={`px-6 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
                   activeTab === 'all-time'
-                    ? 'bg-purple-500/20 text-white border border-purple-500/30'
-                    : 'text-gray-300 hover:text-white hover:bg-white/10'
+                    ? 'bg-green-400/20 text-green-400 border-2 border-green-400'
+                    : 'text-green-300 hover:text-green-400 hover:bg-green-400/10'
                 }`}
               >
                 <div className="flex items-center space-x-2">
                   <Trophy className="w-4 h-4" />
-                  <span>All Time</span>
+                  <span className="font-mono">All Time</span>
                 </div>
               </button>
               <button
                 onClick={() => setActiveTab('weekly')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                className={`px-6 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
                   activeTab === 'weekly'
-                    ? 'bg-purple-500/20 text-white border border-purple-500/30'
-                    : 'text-gray-300 hover:text-white hover:bg-white/10'
+                    ? 'bg-green-400/20 text-green-400 border-2 border-green-400'
+                    : 'text-green-300 hover:text-green-400 hover:bg-green-400/10'
                 }`}
               >
                 <div className="flex items-center space-x-2">
                   <Calendar className="w-4 h-4" />
-                  <span>Weekly</span>
+                  <span className="font-mono">Weekly</span>
                 </div>
               </button>
             </div>
           </div>
 
-          <div className="mt-4 flex justify-center space-x-4">
+          <div className="mt-6 flex justify-center">
             <button
               onClick={testConnection}
-              className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors"
+              className="px-4 py-2 bg-green-400/10 hover:bg-green-400/20 border border-green-400/30 text-green-400 text-sm rounded-lg transition-all duration-200 font-mono"
             >
               Test WebSocket
             </button>
@@ -119,45 +119,45 @@ export default function LeaderboardPage() {
         ) : (
           <>
             {allTimeLoading ? (
-              <div className="text-center text-gray-400 py-8 sm:py-12">
-                <div className="inline-flex items-center space-x-2">
-                  <div className="animate-spin rounded-full h-4 w-4 sm:h-6 sm:w-6 border-b-2 border-purple-400"></div>
-                  <span className="text-sm sm:text-base">Loading leaderboard...</span>
+              <div className="text-center text-green-300 py-12">
+                <div className="inline-flex items-center space-x-3">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-400"></div>
+                  <span className="text-lg font-mono">Loading leaderboard...</span>
                 </div>
               </div>
             ) : allTimeError ? (
-              <div className="text-center text-red-400 py-8 sm:py-12">
-                <p className="text-sm sm:text-base">{allTimeError}</p>
+              <div className="text-center text-red-400 py-12">
+                <p className="text-lg font-mono">{allTimeError}</p>
               </div>
             ) : (
               <>
                 {/* Mobile Card Layout (< md screens) */}
-                <div className="md:hidden space-y-3">
+                <div className="md:hidden space-y-4">
                   {allTimeLeaderboard.map((entry) => (
                     <div
                       key={entry.rank}
-                      className={`border rounded-lg p-4 ${getRankColors(entry.rank)} hover:bg-gray-700/20 transition-all duration-200`}
+                      className={`border-2 rounded-xl p-6 ${getRankColors(entry.rank)} hover:border-green-400 transition-all duration-200`}
                     >
-                      <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center space-x-3">
                           {getRankIcon(entry.rank)}
                           <div>
                             {entry.username ? (
-                              <span className="font-bold text-pink-300 text-sm">{entry.username}</span>
+                              <span className="font-bold text-green-400 text-sm font-mono">{entry.username}</span>
                             ) : (
-                              <span className="text-blue-200 font-mono text-xs">
+                              <span className="text-green-300 font-mono text-xs">
                                 {entry.walletAddress.slice(0, 6)}...{entry.walletAddress.slice(-4)}
                               </span>
                             )}
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="text-green-300 font-bold text-sm">{entry.points} pts</div>
+                          <div className="text-green-400 font-bold text-sm font-mono">{entry.points} pts</div>
                         </div>
                       </div>
-                      <div className="flex items-center justify-between text-xs text-gray-400">
-                        <span>Total Volume</span>
-                        <span className="text-yellow-200 font-semibold">{entry.totalVolume.toFixed(3)} XFI</span>
+                      <div className="flex items-center justify-between text-xs text-green-300">
+                        <span className="font-mono">Total Volume</span>
+                        <span className="text-yellow-400 font-semibold font-mono">{entry.totalVolume.toFixed(3)} XFI</span>
                       </div>
                     </div>
                   ))}
@@ -165,81 +165,83 @@ export default function LeaderboardPage() {
 
                 {/* Desktop Table Layout (>= md screens) */}
                 <div className="hidden md:block overflow-x-auto">
-                  <table className="min-w-full bg-gray-900/50 rounded-lg overflow-hidden backdrop-blur-sm">
-                    <thead>
-                      <tr className="bg-gradient-to-r from-purple-700 to-blue-700 text-white">
-                        <th className="px-4 lg:px-6 py-3 text-left text-sm lg:text-base">Rank</th>
-                        <th className="px-4 lg:px-6 py-3 text-left text-sm lg:text-base">Username / Address</th>
-                        <th className="px-4 lg:px-6 py-3 text-left text-sm lg:text-base">Points</th>
-                        <th className="px-4 lg:px-6 py-3 text-left text-sm lg:text-base">Total Volume (XFI)</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {allTimeLeaderboard.map((entry) => (
-                        <tr 
-                          key={entry.rank} 
-                          className={`border-b border-gray-800 hover:bg-gray-800/50 transition-all duration-200 ${
-                            entry.rank <= 3 ? getRankColors(entry.rank) : ''
-                          }`}
-                        >
-                          <td className="px-4 lg:px-6 py-3 font-semibold">
-                            <div className="flex items-center space-x-2">
-                              {getRankIcon(entry.rank)}
-                            </div>
-                          </td>
-                          <td className="px-4 lg:px-6 py-3 text-blue-200 font-mono">
-                            {entry.username ? (
-                              <span className="font-bold text-pink-300 text-sm lg:text-base">{entry.username}</span>
-                            ) : (
-                              <span className="text-xs lg:text-sm">
-                                {entry.walletAddress.slice(0, 8)}...{entry.walletAddress.slice(-6)}
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-4 lg:px-6 py-3 text-green-300 font-semibold text-sm lg:text-base">
-                            <div className="flex items-center space-x-1">
-                              <TrendingUp className="w-4 h-4" />
-                              <span>{entry.points}</span>
-                            </div>
-                          </td>
-                          <td className="px-4 lg:px-6 py-3 text-yellow-200 font-semibold text-sm lg:text-base">
-                            {entry.totalVolume.toFixed(3)}
-                          </td>
+                  <div className="bg-black/20 backdrop-blur-xl rounded-xl border-2 border-green-400/30 overflow-hidden">
+                    <table className="min-w-full">
+                      <thead>
+                        <tr className="bg-green-400/10 border-b-2 border-green-400/30">
+                          <th className="px-6 py-4 text-left text-sm font-mono text-green-400">Rank</th>
+                          <th className="px-6 py-4 text-left text-sm font-mono text-green-400">Username / Address</th>
+                          <th className="px-6 py-4 text-left text-sm font-mono text-green-400">Points</th>
+                          <th className="px-6 py-4 text-left text-sm font-mono text-green-400">Total Volume (XFI)</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {allTimeLeaderboard.map((entry) => (
+                          <tr 
+                            key={entry.rank} 
+                            className={`border-b border-green-400/20 hover:bg-green-400/5 transition-all duration-200 ${
+                              entry.rank <= 3 ? getRankColors(entry.rank) : ''
+                            }`}
+                          >
+                            <td className="px-6 py-4 font-semibold">
+                              <div className="flex items-center space-x-2">
+                                {getRankIcon(entry.rank)}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 text-green-300 font-mono">
+                              {entry.username ? (
+                                <span className="font-bold text-green-400 text-sm">{entry.username}</span>
+                              ) : (
+                                <span className="text-sm">
+                                  {entry.walletAddress.slice(0, 8)}...{entry.walletAddress.slice(-6)}
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-6 py-4 text-green-400 font-semibold text-sm">
+                              <div className="flex items-center space-x-2">
+                                <TrendingUp className="w-4 h-4" />
+                                <span className="font-mono">{entry.points}</span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 text-yellow-400 font-semibold text-sm font-mono">
+                              {entry.totalVolume.toFixed(3)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
 
                 {/* Summary Stats */}
                 {allTimeLeaderboard.length > 0 && (
-                  <div className="mt-6 sm:mt-8 p-4 bg-gray-800/30 rounded-lg border border-gray-700/50">
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-center">
+                  <div className="mt-8 p-6 bg-black/20 backdrop-blur-xl rounded-xl border-2 border-green-400/30">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-6 text-center">
                       <div>
-                        <div className="text-lg sm:text-xl font-bold text-purple-300">{allTimeLeaderboard.length}</div>
-                        <div className="text-xs sm:text-sm text-gray-400">Total Players</div>
+                        <div className="text-2xl font-bold text-green-400 font-mono">{allTimeLeaderboard.length}</div>
+                        <div className="text-sm text-green-300 font-mono">Total Players</div>
                       </div>
                       <div>
-                        <div className="text-lg sm:text-xl font-bold text-green-300">
+                        <div className="text-2xl font-bold text-green-400 font-mono">
                           {allTimeLeaderboard.reduce((sum, entry) => sum + entry.points, 0).toLocaleString()}
                         </div>
-                        <div className="text-xs sm:text-sm text-gray-400">Total Points</div>
+                        <div className="text-sm text-green-300 font-mono">Total Points</div>
                       </div>
                       <div className="col-span-2 sm:col-span-1">
-                        <div className="text-lg sm:text-xl font-bold text-yellow-300">
+                        <div className="text-2xl font-bold text-yellow-400 font-mono">
                           {allTimeLeaderboard.reduce((sum, entry) => sum + entry.totalVolume, 0).toFixed(3)}
                         </div>
-                        <div className="text-xs sm:text-sm text-gray-400">Total Volume (XFI)</div>
+                        <div className="text-sm text-green-300 font-mono">Total Volume (XFI)</div>
                       </div>
                     </div>
                   </div>
                 )}
 
                 {allTimeLeaderboard.length === 0 && (
-                  <div className="text-center py-8 sm:py-12">
-                    <div className="text-4xl sm:text-6xl mb-4">🏆</div>
-                    <h3 className="text-lg sm:text-xl text-gray-300 mb-2">No players yet</h3>
-                    <p className="text-sm sm:text-base text-gray-500">Be the first to start earning points!</p>
+                  <div className="text-center py-12">
+                    <div className="text-6xl mb-6">🏆</div>
+                    <h3 className="text-2xl text-green-300 mb-3 font-mono">No players yet</h3>
+                    <p className="text-lg text-green-300/60 font-mono">Be the first to start earning points!</p>
                   </div>
                 )}
               </>
@@ -247,6 +249,6 @@ export default function LeaderboardPage() {
           </>
         )}
       </div>
-    </>
+    </div>
   );
 }; 

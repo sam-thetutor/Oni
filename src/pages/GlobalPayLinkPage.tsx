@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { usePrivy } from '@privy-io/react-auth';
 import { useGlobalPaymentLink } from '../hooks/useGlobalPaymentLink';
+import { Header } from '../components/Header';
+import { Footer } from '../components/Footer';
 
 interface GlobalPaymentLinkData {
   linkId: string;
@@ -124,18 +126,18 @@ const GlobalPayLinkPage: React.FC = () => {
 
   if (!ready) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
-        <div className="text-white text-xl">Loading...</div>
+      <div className="min-h-screen relative flex items-center justify-center">
+        <div className="text-green-400 text-xl font-mono">Initializing...</div>
       </div>
     );
   }
 
   if (loadingData) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
-        <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-          <p className="text-white text-lg">Loading global payment link...</p>
+      <div className="min-h-screen relative flex items-center justify-center">
+        <div className="bg-black/20 backdrop-blur-xl border-2 border-green-400/30 rounded-xl p-8 text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-400 mx-auto mb-4"></div>
+          <p className="text-green-300 text-lg font-mono">Loading global payment link...</p>
         </div>
       </div>
     );
@@ -143,14 +145,14 @@ const GlobalPayLinkPage: React.FC = () => {
 
   if (error && !globalPaymentLink) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4">
-        <div className="bg-red-500/20 backdrop-blur-md rounded-2xl p-8 text-center max-w-md">
+      <div className="min-h-screen relative flex items-center justify-center p-4">
+        <div className="bg-black/20 backdrop-blur-xl border-2 border-red-500/30 rounded-xl p-8 text-center max-w-md">
           <div className="text-red-400 text-6xl mb-4">⚠️</div>
-          <h1 className="text-2xl font-bold text-white mb-4">Global Payment Link Error</h1>
-          <p className="text-red-300 mb-6">{error}</p>
+          <h1 className="text-2xl font-bold text-red-400 mb-4 font-mono">Global Payment Link Error</h1>
+          <p className="text-red-300 mb-6 font-mono">{error}</p>
           <button
             onClick={handleBackToHome}
-            className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg transition-colors"
+            className="bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 hover:text-red-300 px-6 py-2 rounded-lg transition-all duration-200 font-mono"
           >
             Go Back Home
           </button>
@@ -160,146 +162,150 @@ const GlobalPayLinkPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4">
-      <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 max-w-md w-full">
-        {/* Global Payment Link Info */}
-        <div className="text-center mb-8">
-          <div className="text-4xl mb-4">🌍</div>
-          <h1 className="text-2xl font-bold text-white mb-2">Global Payment Link</h1>
-          {globalPaymentLink && (
-            <div className="bg-white/10 rounded-lg p-4 mb-6">
-              <div className="text-3xl font-bold text-green-400 mb-2">
-                {globalPaymentLink.totalContributionsInXFI.toFixed(4)} XFI
+    <div className="min-h-screen relative">
+      <Header />
+      <div className="flex items-center justify-center p-4 pt-24 pb-32">
+        <div className="bg-black/20 backdrop-blur-xl border-2 border-green-400/30 rounded-xl p-8 max-w-md w-full font-mono">
+          {/* Global Payment Link Info */}
+          <div className="text-center mb-8">
+            <div className="text-4xl mb-4">🌍</div>
+            <h1 className="text-2xl font-bold text-green-400 mb-2 font-mono">Global Payment Link</h1>
+            {globalPaymentLink && (
+              <div className="bg-black/20 backdrop-blur-xl border border-green-400/20 rounded-lg p-4 mb-6">
+                <div className="text-3xl font-bold text-green-400 mb-2 font-mono">
+                  {globalPaymentLink.totalContributionsInXFI.toFixed(4)} XFI
+                </div>
+                <div className="text-green-300 text-sm mb-2 font-mono">
+                  Total Contributions
+                </div>
+                <div className="text-green-300 text-sm font-mono">
+                  Creator: {formatAddress(globalPaymentLink.creator)}
+                </div>
+                <div className="text-green-300 text-sm font-mono">
+                  Link ID: {globalPaymentLink.linkId}
+                </div>
               </div>
-              <div className="text-gray-300 text-sm mb-2">
-                Total Contributions
-              </div>
-              <div className="text-gray-300 text-sm">
-                Creator: {formatAddress(globalPaymentLink.creator)}
-              </div>
-              <div className="text-gray-300 text-sm">
-                Link ID: {globalPaymentLink.linkId}
+            )}
+          </div>
+
+          {/* Contribution Status */}
+          {contributionStatus === 'success' && (
+            <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4 mb-6">
+              <div className="text-green-400 text-center">
+                <div className="text-2xl mb-2">✅</div>
+                <p className="font-semibold font-mono">Contribution Successful!</p>
+                {transactionHash && (
+                  <div className="mt-2">
+                    <p className="text-sm font-mono">Transaction Hash:</p>
+                    <p className="text-xs font-mono break-all text-green-300">{transactionHash}</p>
+                    <a 
+                      href={`${import.meta.env.VITE_EXPLORER_URL || 'https://xfiscan.com'}/tx/${transactionHash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-green-300 hover:text-green-200 text-xs underline mt-1 inline-block font-mono"
+                    >
+                      View on Explorer →
+                    </a>
+                  </div>
+                )}
               </div>
             </div>
           )}
-        </div>
 
-        {/* Contribution Status */}
-        {contributionStatus === 'success' && (
-          <div className="bg-green-500/20 border border-green-500 rounded-lg p-4 mb-6">
-            <div className="text-green-400 text-center">
-              <div className="text-2xl mb-2">✅</div>
-              <p className="font-semibold">Contribution Successful!</p>
-              {transactionHash && (
-                <div className="mt-2">
-                  <p className="text-sm">Transaction Hash:</p>
-                  <p className="text-xs font-mono break-all">{transactionHash}</p>
-                  <a 
-                    href={`https://test.xfiscan.com/tx/${transactionHash}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-300 hover:text-blue-200 text-xs underline mt-1 inline-block"
-                  >
-                    View on Explorer →
-                  </a>
-                </div>
+          {contributionStatus === 'error' && error && (
+            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 mb-6">
+              <div className="text-red-400 text-center">
+                <div className="text-2xl mb-2">❌</div>
+                <p className="font-semibold font-mono">Contribution Failed</p>
+                <p className="text-sm mt-2 font-mono">{error}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Contribution Form */}
+          {authenticated && (
+            <div className="mb-6">
+              <label className="block text-green-300 text-sm font-medium mb-2 font-mono">
+                Contribution Amount (XFI)
+              </label>
+              <input
+                type="number"
+                step="0.001"
+                min="0"
+                max="1000"
+                value={contributionAmount}
+                onChange={handleAmountChange}
+                placeholder="Enter amount to contribute"
+                className="w-full bg-black/20 backdrop-blur-xl border border-green-400/30 rounded-lg px-4 py-3 text-green-300 placeholder-green-400/50 focus:outline-none focus:border-green-400 focus:ring-1 focus:ring-green-400 font-mono"
+              />
+              {contributionAmountError && (
+                <p className="text-red-400 text-sm mt-1 font-mono">{contributionAmountError}</p>
               )}
+              <div className="flex justify-between mt-2 text-xs text-green-400/70 font-mono">
+                <span>Min: 0.001 XFI</span>
+                <span>Max: 1000 XFI</span>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {contributionStatus === 'error' && error && (
-          <div className="bg-red-500/20 border border-red-500 rounded-lg p-4 mb-6">
-            <div className="text-red-400 text-center">
-              <div className="text-2xl mb-2">❌</div>
-              <p className="font-semibold">Contribution Failed</p>
-              <p className="text-sm mt-2">{error}</p>
-            </div>
-          </div>
-        )}
-
-        {/* Contribution Form */}
-        {authenticated && (
-          <div className="mb-6">
-            <label className="block text-white text-sm font-medium mb-2">
-              Contribution Amount (XFI)
-            </label>
-            <input
-              type="number"
-              step="0.001"
-              min="0"
-              max="1000"
-              value={contributionAmount}
-              onChange={handleAmountChange}
-              placeholder="Enter amount to contribute"
-              className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400"
-            />
-            {contributionAmountError && (
-              <p className="text-red-400 text-sm mt-1">{contributionAmountError}</p>
-            )}
-            <div className="flex justify-between mt-2 text-xs text-gray-400">
-              <span>Min: 0.001 XFI</span>
-              <span>Max: 1000 XFI</span>
-            </div>
-          </div>
-        )}
-
-        {/* Action Buttons */}
-        <div className="space-y-4">
-          {!authenticated ? (
-            <div className="text-center">
-              <p className="text-gray-300 mb-4">Connect your wallet to contribute any amount</p>
+          {/* Action Buttons */}
+          <div className="space-y-4">
+            {!authenticated ? (
+              <div className="text-center">
+                <p className="text-green-300 mb-4 font-mono">Connect your wallet to contribute any amount</p>
+                <button
+                  onClick={handleConnectWallet}
+                  className="w-full bg-green-500/10 hover:bg-green-500/20 border border-green-500/30 text-green-400 hover:text-green-300 py-3 px-6 rounded-lg font-semibold transition-all duration-200 font-mono"
+                >
+                  Connect Wallet to Contribute
+                </button>
+              </div>
+            ) : contributionStatus === 'success' ? (
               <button
-                onClick={handleConnectWallet}
-                className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 px-6 rounded-lg font-semibold transition-colors"
+                onClick={handleBackToHome}
+                className="w-full bg-green-500/10 hover:bg-green-500/20 border border-green-500/30 text-green-400 hover:text-green-300 py-3 px-6 rounded-lg font-semibold transition-all duration-200 font-mono"
               >
-                Connect Wallet to Contribute
+                Done
               </button>
-            </div>
-          ) : contributionStatus === 'success' ? (
+            ) : (
+              <button
+                onClick={handleContribution}
+                disabled={loading || contributionStatus === 'processing' || !contributionAmount.trim()}
+                className="w-full bg-green-500/10 hover:bg-green-500/20 disabled:bg-gray-600/20 disabled:cursor-not-allowed border border-green-500/30 text-green-400 hover:text-green-300 disabled:text-gray-400 py-3 px-6 rounded-lg font-semibold transition-all duration-200 font-mono"
+              >
+                {contributionStatus === 'processing' ? (
+                  <div className="flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-green-400 mr-2"></div>
+                    Processing Contribution...
+                  </div>
+                ) : contributionAmount.trim() ? (
+                  `Contribute ${contributionAmount} XFI`
+                ) : (
+                  'Enter Amount to Contribute'
+                )}
+              </button>
+            )}
+          </div>
+
+          {/* Info Section */}
+          <div className="mt-6 text-center text-green-400/70 text-sm font-mono">
+            <p>🌍 Global payment links accept any amount</p>
+            <p>💝 Your contribution will be added to the total</p>
+            <p>🔒 Secure payment via smart contract</p>
+          </div>
+
+          {/* Back Button */}
+          <div className="mt-4 text-center">
             <button
               onClick={handleBackToHome}
-              className="w-full bg-green-600 hover:bg-green-700 text-white py-3 px-6 rounded-lg font-semibold transition-colors"
+              className="text-green-400/70 hover:text-green-300 text-sm underline transition-colors font-mono"
             >
-              Done
+              ← Back to Home
             </button>
-          ) : (
-            <button
-              onClick={handleContribution}
-              disabled={loading || contributionStatus === 'processing' || !contributionAmount.trim()}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white py-3 px-6 rounded-lg font-semibold transition-colors"
-            >
-              {contributionStatus === 'processing' ? (
-                <div className="flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                  Processing Contribution...
-                </div>
-              ) : contributionAmount.trim() ? (
-                `Contribute ${contributionAmount} XFI`
-              ) : (
-                'Enter Amount to Contribute'
-              )}
-            </button>
-          )}
-        </div>
-
-        {/* Info Section */}
-        <div className="mt-6 text-center text-gray-400 text-sm">
-          <p>🌍 Global payment links accept any amount</p>
-          <p>💝 Your contribution will be added to the total</p>
-          <p>🔒 Secure payment via smart contract</p>
-        </div>
-
-        {/* Back Button */}
-        <div className="mt-4 text-center">
-          <button
-            onClick={handleBackToHome}
-            className="text-gray-400 hover:text-white text-sm underline transition-colors"
-          >
-            ← Back to Home
-          </button>
+          </div>
         </div>
       </div>
+      <Footer />
     </div>
   );
 };

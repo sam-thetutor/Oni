@@ -1,103 +1,111 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { PrivyProvider } from '@privy-io/react-auth';
+import { PrivyConfig } from './config/privy';
+import { Header } from './components/Header';
+import { Footer } from './components/Footer';
 import { HomePage } from './pages/HomePage';
 import { WalletPage } from './pages/WalletPage';
-import PayLinkPage from './pages/PayLinkPage';
-import GlobalPayLinkPage from './pages/GlobalPayLinkPage';
-import { BackendProvider } from './context/BackendContext';
-import { WebSocketProvider } from './context/WebSocketContext';
-import { RefreshProvider } from './context/RefreshContext';
-import { RealTimeNotifications } from './components/RealTimeNotifications';
-import { usePrivy, useWallets } from '@privy-io/react-auth';
-import { Wallet as WalletType } from './types/wallet';
-import ErrorPage from './components/ErrorPage';
 import LeaderboardPage from './pages/LeaderboardPage';
-import { AIInterface } from './components/AIInterface';
-import { Footer } from './components/Footer';
+import { LitepaperPage } from './pages/LitepaperPage';
+import GlobalPayLinkPage from './pages/GlobalPayLinkPage';
+import PayLinkPage from './pages/PayLinkPage';
+import { BackendProvider } from './context/BackendContext';
+import { RefreshProvider } from './context/RefreshContext';
+import { WebSocketProvider } from './context/WebSocketContext';
+import { usePrivy } from '@privy-io/react-auth';
 import oniLogo from './assets/logos.png';
-import { startLeaderboardAutoRefresh, stopLeaderboardAutoRefresh } from './stores/leaderboardStore';
 
-function App() {
-  const { authenticated,user, ready } = usePrivy();
-  const { wallets } = useWallets();
-  const [walletData, setWalletData] = useState<WalletType | null>(null);
+function AppContent() {
+  const { ready, authenticated } = usePrivy();
+  const [showInitializing, setShowInitializing] = useState(true);
 
-  // Handle wallet connection
   useEffect(() => {
-    const initializeWallet = async () => {
-      if (authenticated && wallets.length > 0 && ready) {
-        try {
-          const wallet = wallets[0]; // Get the first connected wallet
-          const address = wallet.address;
-          
-          // Create wallet data object
-          const walletInfo: WalletType = {
-            address,
-            balance: {
-              eth: 0, // Will be updated by WalletConnection component
-              usdc: 0,
-              usdt: 0,
-            },
-            chain: 'crossfi', // Default to CrossFi
-            connectionType: 'privy',
-          };
-          
-          setWalletData(walletInfo);
-        } catch (error) {
-          console.error('Error initializing wallet:', error);
-        }
-      } else {
-        setWalletData(null);
-      }
-    };
+    // Show initializing page for 6 seconds
+    const timer = setTimeout(() => {
+      setShowInitializing(false);
+    }, 6000);
 
-    initializeWallet();
-  }, [authenticated, wallets, ready]);
-
-  // Initialize leaderboard auto-refresh
-  useEffect(() => {
-    startLeaderboardAutoRefresh();
-    
-    return () => {
-      stopLeaderboardAutoRefresh();
-    };
+    return () => clearTimeout(timer);
   }, []);
 
-  if (!ready) {
+  // Show initializing page
+  if (!ready || showInitializing) {
     return (
-      <div className="min-h-screen bg-main-gradient font-mono text-text flex items-center justify-center">
-        <div className="text-center">
-          <img src={oniLogo} alt="Oni" className="w-16 h-16 mx-auto mb-4" />
-          <p className="text-gray-300">Initializing...</p>
+      <div className="min-h-screen bg-black flex items-center justify-center relative overflow-hidden">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute inset-0" style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2310b981' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          }} />
+        </div>
+
+        <div className="relative z-10 text-center">
+          {/* Logo */}
+          <div className="mb-8">
+            <img src={oniLogo} alt="Oni" className="w-24 h-20 mx-auto mb-4" />
+            <h1 className="text-4xl font-bold text-green-400 font-mono mb-2">Oni</h1>
+            <p className="text-green-300 font-mono">AI Agent Platform for CrossFi DeFi</p>
+          </div>
+
+          {/* Loading Animation */}
+          <div className="flex items-center justify-center space-x-2 mb-6">
+            <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+            <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+            <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+          </div>
+
+          {/* Status Messages */}
+          <div className="space-y-2 text-green-300 font-mono">
+            <p>Initializing Oni Platform...</p>
+            <p className="text-sm opacity-70">Connecting to CrossFi Network</p>
+            <p className="text-sm opacity-50">Loading AI Assistant</p>
+            <p className="text-sm opacity-30">Preparing DeFi Tools</p>
+          </div>
+
+          {/* Progress Bar */}
+          <div className="w-64 h-1 bg-green-400/20 rounded-full mt-6 mx-auto overflow-hidden">
+            <div className="h-full bg-green-400 rounded-full animate-pulse" style={{
+              width: '60%',
+              animation: 'pulse 2s infinite'
+            }}></div>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <BackendProvider>
-      <WebSocketProvider>
+    <Router>
+      <BackendProvider>
         <RefreshProvider>
-          <div className="min-h-screen bg-main-gradient font-mono text-text flex flex-col">
-            <div className="absolute inset-0 opacity-20"></div>
-            {/* <Header /> */}
-            <main className="flex-1 relative z-10">
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/wallet" element={<WalletPage />} />
-              <Route path="/ai" element={<AIInterface />} />
-              <Route path="/leaderboard" element={<LeaderboardPage />} />
-              <Route path="/paylink/:linkId" element={<PayLinkPage />} />
-              <Route path="/global-paylink/:linkId" element={<GlobalPayLinkPage />} />
-              <Route path="*" element={<ErrorPage />} />
-            </Routes>
-            </main>
-            <Footer />
-            <RealTimeNotifications />
-          </div>
+          <WebSocketProvider>
+            <div className="min-h-screen relative">
+              {/* <Header /> */}
+              <main>
+                <Routes>
+                  <Route path="/" element={<HomePage />} />
+                  <Route path="/wallet" element={<WalletPage />} />
+                  <Route path="/leaderboard" element={<LeaderboardPage />} />
+                  <Route path="/litepaper" element={<LitepaperPage />} />
+                  <Route path="/pay/:linkId" element={<PayLinkPage />} />
+                  <Route path="/global/:linkId" element={<GlobalPayLinkPage />} />
+                </Routes>
+              </main>
+              <Footer />
+            </div>
+          </WebSocketProvider>
         </RefreshProvider>
-      </WebSocketProvider>
-    </BackendProvider>
+      </BackendProvider>
+    </Router>
+  );
+}
+
+function App() {
+  return (
+    <PrivyProvider appId={PrivyConfig.appId} config={PrivyConfig.config}>
+      <AppContent />
+    </PrivyProvider>
   );
 }
 
