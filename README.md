@@ -52,7 +52,7 @@ graph TB
         K[CrossFi Network] --> L[Smart Contracts]
         K --> M[Viem Client]
         L --> N[Payment Links]
-        L --> O[Swap Contracts]
+        L --> O[DeFi Contracts]
         L --> P[DCA Orders]
     end
     
@@ -139,21 +139,21 @@ sequenceDiagram
 - **Smart Contracts**: Solidity + Hardhat
 - **Tokens**: XFI, MPX, USDC
 - **Explorer**: xfiscan.com
-- **DeFi Protocols**: Swap, Payment Links, DCA
+- **DeFi Protocols**: Payment Links, DCA
 
 ## 🔧 Oni Core Features
 
 ### 1. AI-Powered DeFi Chat Interface
 ```typescript
 // Oni AI Agent Tool for CrossFi DeFi
-class OniSwapTokensTool extends StructuredTool {
-  name = "oni_swap_tokens"
-  description = "Execute token swaps on CrossFi DEX through natural language"
+class OniDeFiTool extends StructuredTool {
+  name = "oni_defi_tool"
+  description = "Execute DeFi operations on CrossFi through natural language"
   
-  async _call({ fromToken, toToken, amount, userAddress }) {
-    // Oni AI executes swap transaction on CrossFi
-    const tx = await this.swapContract.swap(fromToken, toToken, amount)
-    return { success: true, txHash: tx.hash, message: "Swap executed successfully on CrossFi" }
+  async _call({ operation, params, userAddress }) {
+    // Oni AI executes DeFi transaction on CrossFi
+    const tx = await this.defiContract.execute(operation, params)
+    return { success: true, txHash: tx.hash, message: "DeFi operation executed successfully on CrossFi" }
   }
 }
 ```

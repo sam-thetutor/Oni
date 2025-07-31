@@ -12,7 +12,7 @@ export interface Wallet {
 
 export interface Transaction {
   id: string;
-  type: 'send' | 'receive' | 'swap';
+  type: 'send' | 'receive';
   amount: number;
   token: string;
   fromAddress: string;

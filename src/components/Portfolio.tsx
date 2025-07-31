@@ -7,7 +7,7 @@ interface PortfolioProps {
 }
 
 export const Portfolio: React.FC<PortfolioProps> = ({ walletAddress }) => {
-  const { xfi, mpx, tUSDC, isLoading, error, refreshBalances } = useWalletBalance(walletAddress);
+  const { xfi, mpx, usdt, usdc, isLoading, error, refreshBalances } = useWalletBalance(walletAddress);
   const [copySuccess, setCopySuccess] = useState(false);
 
   const copyToClipboard = async (text: string) => {
@@ -73,7 +73,7 @@ export const Portfolio: React.FC<PortfolioProps> = ({ walletAddress }) => {
       </div>
 
       {/* Balances Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* XFI Balance */}
         <div className="bg-white/5 rounded-lg border border-white/10 p-6">
           <div className="flex items-center justify-between mb-4">
@@ -116,12 +116,12 @@ export const Portfolio: React.FC<PortfolioProps> = ({ walletAddress }) => {
           )}
         </div>
 
-        {/* tUSDC Balance */}
+        {/* USDT Balance */}
         <div className="bg-white/5 rounded-lg border border-white/10 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h4 className="text-sm font-medium text-gray-400">tUSDC Balance</h4>
+            <h4 className="text-sm font-medium text-gray-400">USDT Balance</h4>
             <div className="w-8 h-8 bg-green-500/20 rounded-lg flex items-center justify-center">
-              <span className="text-green-400 font-bold text-sm">$</span>
+              <span className="text-green-400 font-bold text-sm">T</span>
             </div>
           </div>
           {isLoading ? (
@@ -132,7 +132,28 @@ export const Portfolio: React.FC<PortfolioProps> = ({ walletAddress }) => {
             <div className="text-red-400 text-sm">Error loading balance</div>
           ) : (
             <div className="text-2xl font-bold text-green-400">
-              {formatBalance(tUSDC)} tUSDC
+              {formatBalance(usdt)} USDT
+            </div>
+          )}
+        </div>
+
+        {/* USDC Balance */}
+        <div className="bg-white/5 rounded-lg border border-white/10 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h4 className="text-sm font-medium text-gray-400">USDC Balance</h4>
+            <div className="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center">
+              <span className="text-blue-400 font-bold text-sm">C</span>
+            </div>
+          </div>
+          {isLoading ? (
+            <div className="animate-pulse">
+              <div className="h-8 bg-gray-600/20 rounded mb-2"></div>
+            </div>
+          ) : error ? (
+            <div className="text-red-400 text-sm">Error loading balance</div>
+          ) : (
+            <div className="text-2xl font-bold text-blue-400">
+              {formatBalance(usdc)} USDC
             </div>
           )}
         </div>

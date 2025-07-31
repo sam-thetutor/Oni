@@ -1,0 +1,650 @@
+/**
+ * Any CSS included here will be global. The classic template
+ * bundles Infima by default. Infima is a CSS framework designed to
+ * work well for content-focused websites.
+ */
+
+/* You can override the default Infima variables here. */
+:root {
+  --ifm-color-primary: #4ade80; /* green-400 */
+  --ifm-color-primary-dark: #22c55e; /* green-500 */
+  --ifm-color-primary-darker: #16a34a; /* green-600 */
+  --ifm-color-primary-darkest: #15803d; /* green-700 */
+  --ifm-color-primary-light: #86efac; /* green-300 */
+  --ifm-color-primary-lighter: #bbf7d0; /* green-200 */
+  --ifm-color-primary-lightest: #dcfce7; /* green-100 */
+  --ifm-code-font-size: 95%;
+  --docusaurus-highlighted-code-line-bg: rgba(74, 222, 128, 0.1);
+  
+  /* Oni theme colors - Green theme */
+  --oni-bg: #0a0a23;
+  --oni-bg-gradient-from: #0a0a23;
+  --oni-bg-gradient-to: #1a237e;
+  --oni-primary: #4ade80; /* green-400 */
+  --oni-secondary: #ff005c;
+  --oni-accent: #ffb300;
+  --oni-text: #ffffff;
+  --oni-muted: #b0b0b0;
+  --oni-glow: #4ade8080; /* green-400 with opacity */
+}
+
+/* For readability concerns, you should choose a lighter palette in dark mode. */
+[data-theme='dark'] {
+  --ifm-color-primary: #4ade80; /* green-400 */
+  --ifm-color-primary-dark: #22c55e; /* green-500 */
+  --ifm-color-primary-darker: #16a34a; /* green-600 */
+  --ifm-color-primary-darkest: #15803d; /* green-700 */
+  --ifm-color-primary-light: #86efac; /* green-300 */
+  --ifm-color-primary-lighter: #bbf7d0; /* green-200 */
+  --ifm-color-primary-lightest: #dcfce7; /* green-100 */
+  --docusaurus-highlighted-code-line-bg: rgba(74, 222, 128, 0.3);
+  
+  /* Dark theme background */
+  --ifm-background-color: var(--oni-bg);
+  --ifm-background-surface-color: #1a1a2e;
+  --ifm-color-emphasis-100: #2a2a3e;
+  --ifm-color-emphasis-200: #3a3a4e;
+  --ifm-color-emphasis-300: #4a4a5e;
+  --ifm-color-emphasis-400: #5a5a6e;
+  --ifm-color-emphasis-500: #6a6a7e;
+  --ifm-color-emphasis-600: #7a7a8e;
+  --ifm-color-emphasis-700: #8a8a9e;
+  --ifm-color-emphasis-800: #9a9aae;
+  --ifm-color-emphasis-900: #aaaabe;
+  --ifm-color-emphasis-1000: #ffffff;
+  
+  /* Text colors */
+  --ifm-color-content: var(--oni-text);
+  --ifm-color-content-secondary: var(--oni-muted);
+  
+  /* Ensure better text contrast */
+  --ifm-color-content-inverse: #000000;
+  --ifm-color-content-secondary-inverse: #333333;
+  
+  /* Navbar and footer */
+  --ifm-navbar-background-color: rgba(10, 10, 35, 0.95);
+  --ifm-footer-background-color: var(--oni-bg);
+  --ifm-footer-color: var(--oni-text);
+  --ifm-footer-link-color: var(--oni-primary);
+}
+
+/* Light theme (if needed) */
+[data-theme='light'] {
+  --ifm-color-primary: #4ade80; /* green-400 */
+  --ifm-color-primary-dark: #22c55e; /* green-500 */
+  --ifm-color-primary-darker: #16a34a; /* green-600 */
+  --ifm-color-primary-darkest: #15803d; /* green-700 */
+  --ifm-color-primary-light: #86efac; /* green-300 */
+  --ifm-color-primary-lighter: #bbf7d0; /* green-200 */
+  --ifm-color-primary-lightest: #dcfce7; /* green-100 */
+  --docusaurus-highlighted-code-line-bg: rgba(74, 222, 128, 0.1);
+}
+
+/* Custom navbar styling */
+.navbar {
+  background: linear-gradient(135deg, var(--oni-bg-gradient-from), var(--oni-bg-gradient-to));
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--oni-primary);
+}
+
+.navbar__title {
+  color: var(--oni-primary);
+  font-weight: bold;
+}
+
+.navbar__link {
+  color: var(--oni-text);
+  transition: color 0.3s ease;
+}
+
+.navbar__link:hover {
+  color: var(--oni-primary);
+}
+
+/* Custom sidebar styling */
+.theme-doc-sidebar-container {
+  background: var(--oni-bg);
+  border-right: 1px solid var(--oni-primary);
+}
+
+.theme-doc-sidebar-item-category-level-1 > .theme-doc-sidebar-item-category-level-1__button {
+  color: var(--oni-primary);
+  font-weight: bold;
+}
+
+.theme-doc-sidebar-item-link-level-1 {
+  color: var(--oni-text);
+}
+
+.theme-doc-sidebar-item-link-level-1:hover {
+  color: var(--oni-primary);
+  background: rgba(0, 234, 255, 0.1);
+}
+
+/* Custom footer styling */
+.footer {
+  background: linear-gradient(135deg, var(--oni-bg-gradient-from), var(--oni-bg-gradient-to));
+  border-top: 1px solid var(--oni-primary);
+}
+
+.footer__title {
+  color: var(--oni-primary);
+}
+
+.footer__link-item {
+  color: var(--oni-text);
+}
+
+.footer__link-item:hover {
+  color: var(--oni-primary);
+}
+
+/* Custom button styling */
+.button {
+  background: linear-gradient(135deg, var(--oni-primary), var(--oni-secondary));
+  border: none;
+  color: var(--oni-text);
+  transition: all 0.3s ease;
+}
+
+.button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px var(--oni-glow);
+}
+
+/* Custom card styling */
+.card {
+  background: rgba(26, 35, 126, 0.3);
+  border: 1px solid var(--oni-primary);
+  border-radius: 8px;
+  backdrop-filter: blur(10px);
+}
+
+.card:hover {
+  border-color: var(--oni-secondary);
+  box-shadow: 0 4px 20px var(--oni-glow);
+}
+
+/* Custom code block styling */
+.prism-code {
+  background: var(--oni-bg);
+  border: 1px solid var(--oni-primary);
+}
+
+/* Custom table styling */
+table {
+  background: rgba(26, 35, 126, 0.2);
+  border: 1px solid var(--oni-primary);
+}
+
+th {
+  background: var(--oni-primary);
+  color: var(--oni-bg);
+}
+
+td {
+  border-bottom: 1px solid var(--oni-primary);
+}
+
+/* Custom link styling */
+a {
+  color: var(--oni-primary);
+}
+
+a:hover {
+  color: var(--oni-secondary);
+}
+
+/* Custom heading styling */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--oni-primary);
+}
+
+/* Custom blockquote styling */
+blockquote {
+  border-left: 4px solid var(--oni-primary);
+  background: rgba(0, 234, 255, 0.1);
+}
+
+/* Custom alert styling */
+.alert {
+  border: 1px solid var(--oni-primary);
+  background: rgba(0, 234, 255, 0.1);
+}
+
+.alert--info {
+  border-color: var(--oni-primary);
+  background: rgba(0, 234, 255, 0.1);
+}
+
+.alert--warning {
+  border-color: var(--oni-accent);
+  background: rgba(255, 179, 0, 0.1);
+}
+
+.alert--danger {
+  border-color: var(--oni-secondary);
+  background: rgba(255, 0, 92, 0.1);
+}
+
+.alert--success {
+  border-color: var(--oni-primary);
+  background: rgba(0, 234, 255, 0.1);
+}
+
+/* Custom badge styling */
+.badge {
+  background: var(--oni-primary);
+  color: var(--oni-bg);
+}
+
+/* Custom search styling */
+.clean-btn {
+  color: var(--oni-primary);
+}
+
+.clean-btn:hover {
+  color: var(--oni-secondary);
+}
+
+/* Custom pagination styling */
+.pagination-nav__link {
+  border: 1px solid var(--oni-primary);
+  background: rgba(0, 234, 255, 0.1);
+}
+
+.pagination-nav__link:hover {
+  background: rgba(0, 234, 255, 0.2);
+  border-color: var(--oni-secondary);
+}
+
+/* Custom breadcrumb styling */
+.breadcrumbs__link {
+  color: var(--oni-primary);
+}
+
+.breadcrumbs__link:hover {
+  color: var(--oni-secondary);
+}
+
+/* Custom toc styling */
+.table-of-contents__link {
+  color: var(--oni-text);
+}
+
+.table-of-contents__link:hover {
+  color: var(--oni-primary);
+}
+
+.table-of-contents__link--active {
+  color: var(--oni-primary);
+  font-weight: bold;
+}
+
+/* Custom admonition styling */
+.admonition {
+  border: 1px solid var(--oni-primary);
+  background: rgba(0, 234, 255, 0.1);
+}
+
+.admonition-heading {
+  color: var(--oni-primary);
+}
+
+/* Custom mermaid diagram styling */
+.mermaid {
+  background: var(--oni-bg);
+  border: 1px solid var(--oni-primary);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+/* Custom scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--oni-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--oni-primary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--oni-secondary);
+}
+
+/* Custom selection styling */
+::selection {
+  background: var(--oni-primary);
+  color: var(--oni-bg);
+}
+
+/* Custom focus styling */
+:focus {
+  outline: 2px solid var(--oni-primary);
+  outline-offset: 2px;
+}
+
+/* Custom loading animation */
+@keyframes glow {
+  0%, 100% {
+    box-shadow: 0 0 5px var(--oni-glow);
+  }
+  50% {
+    box-shadow: 0 0 20px var(--oni-glow), 0 0 30px var(--oni-glow);
+  }
+}
+
+.loading {
+  animation: glow 2s ease-in-out infinite alternate;
+}
+
+/* Enhanced text visibility and contrast */
+p, div, span, li {
+  color: #ffffff !important;
+}
+
+/* Specific overrides for features section to ensure visibility */
+.features p,
+.features div,
+.features span,
+.features li,
+.featureDescription,
+.featuresSubtitle,
+.featureTitle {
+  color: inherit !important;
+}
+
+/* Ensure feature section text is visible */
+.features .featureDescription {
+  color: #6c757d !important;
+}
+
+.features .featureTitle {
+  color: #2c3e50 !important;
+}
+
+.features .featuresSubtitle {
+  color: #6c757d !important;
+}
+
+.features .featuresTitle {
+  color: #2c3e50 !important;
+}
+
+/* Override for feature cards specifically */
+.featureLink .featureDescription {
+  color: #6c757d !important;
+}
+
+.featureLink .featureTitle {
+  color: #2c3e50 !important;
+}
+
+/* Ensure headings are clearly visible */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--oni-primary) !important;
+  text-shadow: 0 0 10px rgba(74, 222, 128, 0.3);
+}
+
+/* Improve sidebar text visibility */
+.theme-doc-sidebar-item-category-level-1 > .theme-doc-sidebar-item-category-level-1__button {
+  color: #ffffff !important;
+  font-weight: 600;
+}
+
+.theme-doc-sidebar-item-link-level-1 {
+  color: #e0e0e0 !important;
+}
+
+.theme-doc-sidebar-item-link-level-1:hover {
+  color: var(--oni-primary) !important;
+  background-color: rgba(74, 222, 128, 0.1);
+}
+
+/* Improve table of contents visibility */
+.table-of-contents__link {
+  color: #e0e0e0 !important;
+}
+
+.table-of-contents__link:hover {
+  color: var(--oni-primary) !important;
+}
+
+.table-of-contents__link--active {
+  color: var(--oni-primary) !important;
+  font-weight: bold;
+  text-shadow: 0 0 5px rgba(74, 222, 128, 0.5);
+}
+
+/* Improve breadcrumb visibility */
+.breadcrumbs__link {
+  color: #e0e0e0 !important;
+}
+
+.breadcrumbs__link:hover {
+  color: var(--oni-primary) !important;
+}
+
+/* Improve navbar text visibility */
+.navbar__link {
+  color: #ffffff !important;
+  font-weight: 500;
+}
+
+.navbar__link:hover {
+  color: var(--oni-primary) !important;
+}
+
+/* Improve footer text visibility */
+.footer__title {
+  color: var(--oni-primary) !important;
+  font-weight: bold;
+}
+
+.footer__link-item {
+  color: #e0e0e0 !important;
+}
+
+.footer__link-item:hover {
+  color: var(--oni-primary) !important;
+}
+
+/* Circuit board background pattern - matching Oni's aesthetic */
+body {
+  background-color: #000000;
+  position: relative;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, #4ade80 1px, transparent 1px),
+    linear-gradient(0deg, #4ade80 1px, transparent 1px);
+  background-size: 50px 50px;
+  opacity: 0.1;
+  z-index: -2;
+  pointer-events: none;
+}
+
+/* Ensure content is above the background pattern */
+#__docusaurus {
+  position: relative;
+  z-index: 1;
+}
+
+/* Main content area improvements */
+.main-wrapper {
+  background-color: rgba(10, 10, 35, 0.8);
+  backdrop-filter: blur(10px);
+}
+
+/* Improve main content text readability */
+.theme-doc-markdown {
+  color: #ffffff !important;
+}
+
+.theme-doc-markdown p {
+  color: #e0e0e0 !important;
+  line-height: 1.6;
+}
+
+.theme-doc-markdown li {
+  color: #e0e0e0 !important;
+}
+
+/* Improve code block visibility */
+.theme-code-block {
+  background-color: rgba(0, 0, 0, 0.3) !important;
+  border: 1px solid var(--oni-primary) !important;
+}
+
+/* Fix code block text visibility - this is the critical fix */
+.theme-code-block code {
+  color: #ffffff !important;
+  background-color: rgba(0, 0, 0, 0.8) !important;
+}
+
+/* Fix inline code visibility */
+code {
+  color: #ffffff !important;
+  background-color: rgba(0, 0, 0, 0.8) !important;
+  border: 1px solid var(--oni-primary) !important;
+}
+
+/* Fix pre blocks (code blocks) */
+pre {
+  background-color: rgba(0, 0, 0, 0.9) !important;
+  border: 2px solid var(--oni-primary) !important;
+  border-radius: 8px !important;
+  padding: 16px !important;
+  margin: 16px 0 !important;
+  box-shadow: 0 0 20px rgba(74, 222, 128, 0.2) !important;
+}
+
+pre code {
+  color: #ffffff !important;
+  background-color: transparent !important;
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+}
+
+/* Ensure all code elements are visible */
+.theme-code-block,
+.theme-code-block pre,
+.theme-code-block code,
+pre,
+code {
+  color: #ffffff !important;
+  background-color: rgba(0, 0, 0, 0.9) !important;
+}
+
+/* Fix syntax highlighting colors */
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+  color: #86efac !important; /* green-300 */
+}
+
+.token.punctuation {
+  color: #e0e0e0 !important;
+}
+
+.token.property,
+.token.tag,
+.token.boolean,
+.token.number,
+.token.constant,
+.token.symbol,
+.token.deleted {
+  color: #fbbf24 !important; /* amber-400 */
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.inserted {
+  color: #34d399 !important; /* emerald-400 */
+}
+
+.token.operator,
+.token.entity,
+.token.url,
+.language-css .token.string,
+.style .token.string {
+  color: #f87171 !important; /* red-400 */
+}
+
+.token.atrule,
+.token.attr-value,
+.token.keyword {
+  color: #a78bfa !important; /* violet-400 */
+}
+
+.token.function,
+.token.class-name {
+  color: #60a5fa !important; /* blue-400 */
+}
+
+.token.regex,
+.token.important,
+.token.variable {
+  color: #fbbf24 !important; /* amber-400 */
+}
+
+.token.important,
+.token.bold {
+  font-weight: bold;
+}
+
+.token.italic {
+  font-style: italic;
+}
+
+.token.entity {
+  cursor: help;
+}
+
+/* Improve alert visibility */
+.alert {
+  background-color: rgba(0, 0, 0, 0.4) !important;
+  border: 1px solid var(--oni-primary) !important;
+  color: #ffffff !important;
+}
+
+/* Improve card visibility */
+.card {
+  background-color: rgba(10, 10, 35, 0.9) !important;
+  border: 1px solid var(--oni-primary) !important;
+  color: #ffffff !important;
+}
+
+/* Improve table visibility */
+table {
+  background-color: rgba(0, 0, 0, 0.3) !important;
+  border: 1px solid var(--oni-primary) !important;
+}
+
+th {
+  background-color: rgba(74, 222, 128, 0.1) !important;
+  color: var(--oni-primary) !important;
+  border: 1px solid var(--oni-primary) !important;
+}
+
+td {
+  color: #e0e0e0 !important;
+  border: 1px solid rgba(74, 222, 128, 0.3) !important;
+}

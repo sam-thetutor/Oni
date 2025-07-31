@@ -5,7 +5,7 @@ import { useWallets } from '@privy-io/react-auth';
 export const QuickActions= () => {
   const {wallets} = useWallets();
   const wallet = wallets[0];
-  const [activeAction, setActiveAction] = useState<'send' | 'receive' | 'swap' | null>(null);
+  const [activeAction, setActiveAction] = useState<'send' | 'receive' | null>(null);
   const [formData, setFormData] = useState({
     amount: '',
     token: wallet.chainId === 'crossfi' ? 'XFI' : 'ETH',
@@ -72,20 +72,7 @@ export const QuickActions= () => {
             </div>
           </button>
 
-          <button
-            onClick={() => setActiveAction('swap')}
-            className="group p-6 bg-gradient-to-br from-blue-500/10 to-blue-600/10 hover:from-blue-500/20 hover:to-blue-600/20 border border-blue-500/20 rounded-xl transition-all duration-200 hover:shadow-lg"
-          >
-            <div className="flex flex-col items-center space-y-3">
-              <div className="p-3 bg-blue-500/20 rounded-full group-hover:bg-blue-500/30 transition-colors">
-                <RotateCcw className="w-6 h-6 text-blue-400" />
-              </div>
-              <div className="text-center">
-                <h3 className="font-medium text-white">Swap Tokens</h3>
-                <p className="text-sm text-gray-400">Exchange one token for another</p>
-              </div>
-            </div>
-          </button>
+
         </div>
       )}
 
@@ -192,103 +179,7 @@ export const QuickActions= () => {
         </div>
       )}
 
-      {/* Swap Form */}
-      {activeAction === 'swap' && (
-        <div className="bg-gray-800/30 rounded-xl p-6 border border-gray-700/50">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-semibold text-white">Swap Tokens</h2>
-            <button
-              onClick={() => setActiveAction(null)}
-              className="text-gray-400 hover:text-white"
-            >
-              ✕
-            </button>
-          </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">From</label>
-              <div className="grid grid-cols-2 gap-4">
-                <input
-                  type="number"
-                  step="0.000001"
-                  value={formData.amount}
-                  onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                  className="px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20"
-                  placeholder="0.00"
-                  required
-                />
-                <select
-                  value={formData.fromToken}
-                  onChange={(e) => setFormData({ ...formData, fromToken: e.target.value })}
-                  className="px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20"
-                >
-                  {tokens.map(token => (
-                    <option key={token} value={token}>{token}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="flex justify-center">
-              <button
-                type="button"
-                onClick={() => setFormData({
-                  ...formData,
-                  fromToken: formData.toToken,
-                  toToken: formData.fromToken
-                })}
-                className="p-2 bg-gray-700/50 hover:bg-gray-600/50 rounded-full transition-colors"
-              >
-                <RotateCcw className="w-5 h-5 text-gray-400" />
-              </button>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">To</label>
-              <div className="grid grid-cols-2 gap-4">
-                <input
-                  type="text"
-                  value="~0.0012"
-                  readOnly
-                  className="px-4 py-3 bg-gray-800/30 border border-gray-600 rounded-lg text-gray-400"
-                />
-                <select
-                  value={formData.toToken}
-                  onChange={(e) => setFormData({ ...formData, toToken: e.target.value })}
-                  className="px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20"
-                >
-                  {tokens.filter(token => token !== formData.fromToken).map(token => (
-                    <option key={token} value={token}>{token}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="bg-gray-700/30 rounded-lg p-3 text-sm text-gray-400">
-              <div className="flex justify-between">
-                <span>Rate:</span>
-                <span>1 {formData.fromToken} = 0.0012 {formData.toToken}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Slippage:</span>
-                <span>0.5%</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Gas fee:</span>
-                <span>~$8.50</span>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium rounded-lg hover:from-blue-700 hover:to-blue-800 focus:ring-4 focus:ring-blue-500/50 transition-all duration-200"
-            >
-              Swap {formData.fromToken} for {formData.toToken}
-            </button>
-          </form>
-        </div>
-      )}
     </div>
   );
 };

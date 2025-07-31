@@ -1,0 +1,21 @@
+# Add your authors to this file.
+# https://docusaurus.io/docs/blog#authors
+
+# You can add as many authors as you want.
+# You can use emails and/or links to social media accounts, the order will be respected from top to bottom.
+# For example: [email, twitter, facebook, instagram, linkedin, ...]
+# Please don't add png/jpg/jpeg, bmp, gif, ico or svg files, they are not allowed in the yaml.
+
+oni-team:
+  name: Oni Team
+  title: CrossFi AI Agent Team
+  url: https://github.com/samthetutor/Oni
+  image_url: https://github.com/samthetutor.png
+  page: true
+
+# Example:
+# name:
+#   name: Name
+#   title: Title
+#   url: https://example.com
+#   image_url: https://github.com/github.png

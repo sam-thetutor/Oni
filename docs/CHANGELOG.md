@@ -73,7 +73,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - XFI token transactions
 - Payment link system (fixed and global)
 - DCA (Dollar Cost Averaging) orders
-- Token swapping functionality
+
 - Liquidity pool management
 - AI-powered crypto assistant
 - Real-time transaction notifications

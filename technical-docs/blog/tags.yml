@@ -1,0 +1,18 @@
+# Add your tags to this file.
+# https://docusaurus.io/docs/blog#tags
+
+# You can add as many tags as you want.
+# You can use emails and/or links to social media accounts, the order will be respected from top to bottom.
+# For example: [email, twitter, facebook, instagram, linkedin, ...]
+# Please don't add png/jpg/jpeg, bmp, gif, ico or svg files, they are not allowed in the yaml.
+
+announcement:
+  label: Announcement
+  permalink: /blog/tags/announcement
+  description: Official announcements and updates
+
+# Example:
+# name:
+#   name: Name
+#   description: Description
+#   permalink: /blog/tags/name

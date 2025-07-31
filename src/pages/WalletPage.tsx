@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Header } from '../components/Header';
 // import { WalletOverview } from '../components/WalletOverview';
 import { TransactionHistory } from '../components/TransactionHistory';
@@ -10,6 +10,7 @@ import { usePaymentLinks, PaymentLinkData } from '../hooks/usePaymentLinks';
 import { useWebSocket } from '../context/WebSocketContext';
 import { Wallet, Copy, ExternalLink, Trash2, RefreshCw, Filter, Link as LinkIcon, History, Zap, TrendingUp } from 'lucide-react';
 import { WalletOverview } from '../components/WalletOverview';
+import { useTransactionHistoryStore } from '../stores/transactionHistoryStore';
 
 // Payment Links Content Component
 const PaymentLinksContent: React.FC<{
@@ -295,6 +296,25 @@ export const WalletPage = () => {
   const [filter, setFilter] = useState<'all' | 'fixed' | 'global'>('all');
   const [copySuccess, setCopySuccess] = useState<string | null>(null);
 
+  // Transaction history store
+  const { fetchTransactionHistory } = useTransactionHistoryStore();
+
+  // Fetch transaction history when user first logs in
+  useEffect(() => {
+    if (backendWallet && !loading) {
+      console.log('🏦 WalletPage: User logged in, fetching initial transaction history for backend wallet:', backendWallet);
+      fetchTransactionHistory(backendWallet);
+    }
+  }, [backendWallet, loading, fetchTransactionHistory]);
+
+  // Fetch transaction history when user visits the history tab
+  useEffect(() => {
+    if (activeTab === 'history' && backendWallet) {
+      console.log('🏦 WalletPage: User visited transaction history tab, refreshing data for backend wallet:', backendWallet);
+      fetchTransactionHistory(backendWallet, true); // Force refresh when visiting the tab
+    }
+  }, [activeTab, backendWallet, fetchTransactionHistory]);
+
   // Handle filter change
   const handleFilterChange = (newFilter: 'all' | 'fixed' | 'global') => {
     setFilter(newFilter);
@@ -384,7 +404,7 @@ export const WalletPage = () => {
                   )
                 ) : activeTab === 'history' ? (
                   backendWallet ? (
-                    <TransactionHistory walletAddress={backendWallet} />
+                    <TransactionHistory />
                   ) : (
                     <div className="text-center py-8">
                       <Wallet className="w-12 h-12 text-green-400 mx-auto mb-4 animate-pulse" />

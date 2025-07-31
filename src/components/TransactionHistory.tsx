@@ -1,111 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import { useBackendWallet } from '../hooks/useBackendWallet';
-import { EXPLORER_URL } from '../utils/constants';
-
-interface Transaction {
-  hash: string;
-  from: string;
-  to: string;
-  value: string;
-  status: string;
-  timestamp: string;
-  explorerUrl?: string;
-}
-
-interface CrossFiTransaction {
-  txhash: string;
-  timestamp: string;
-  body: {
-    messages: Array<{
-      from?: string;
-      data?: {
-        to?: string;
-        value?: string;
-      };
-    }>;
-  };
-  code: number;
-  evm_txhashes: string[];
-}
+import React from 'react';
+import { useTransactionHistory } from '../hooks/useTransactionHistory';
 
 export const TransactionHistory: React.FC = () => {
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const { backendWallet } = useBackendWallet();
+  const { 
+    transactions, 
+    loading, 
+    error, 
+    hasMore, 
+    loadMore, 
+    refresh,
+    lastFetched 
+  } = useTransactionHistory();
 
-  const fetchTransactions = async () => {
-    if (!backendWallet) {
-      setTransactions([]);
-      return;
-    }
+  // Show cached data if available, even while loading
+  const hasCachedData = transactions.length > 0;
+  const showLoadingState = loading && !hasCachedData;
 
-    setLoading(true);
-    setError(null);
-
-    try {
-      console.log(`🔍 Fetching transactions for backend wallet: ${backendWallet}`);
-      console.log(`🔍 Using explorer URL: ${EXPLORER_URL}`);
-
-      const response = await fetch(`${EXPLORER_URL}/api/1.0/txs?address=${backendWallet}&page=1&limit=20`);
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch transactions: ${response.status}`);
-      }
-
-      const data = await response.json();
-      console.log('Raw transaction data:', data);
-
-      if (data.docs && Array.isArray(data.docs)) {
-        const parsedTransactions: Transaction[] = data.docs
-          .filter((tx: CrossFiTransaction) => tx.code === 0) // Only successful transactions
-          .map((tx: CrossFiTransaction) => {
-            const message = tx.body.messages[0];
-            const data = message.data;
-            
-            // Extract transaction details
-            const from = message.from || '';
-            const to = data?.to || '';
-            const value = data?.value || '0';
-            
-            // Convert wei to XFI (1 XFI = 10^18 wei)
-            const valueInXFI = (parseInt(value) / Math.pow(10, 18)).toString();
-            
-            return {
-              hash: tx.evm_txhashes[0] || tx.txhash,
-              from: from.toLowerCase(),
-              to: to.toLowerCase(),
-              value: valueInXFI,
-              status: tx.code === 0 ? 'success' : 'failed',
-              timestamp: tx.timestamp,
-              explorerUrl: `${EXPLORER_URL}/tx/${tx.evm_txhashes[0] || tx.txhash}`
-            };
-          })
-          .filter((tx: Transaction) => tx.from && tx.to && tx.value !== '0'); // Filter out empty transactions
-        
-        console.log('Parsed transactions:', parsedTransactions);
-        setTransactions(parsedTransactions);
-      } else {
-        setTransactions([]);
-      }
-    } catch (err) {
-      console.error('Error fetching transactions:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch transactions');
-      setTransactions([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchTransactions();
-  }, [backendWallet]);
-
-  const getExplorerUrl = (hash: string) => {
-    return `${EXPLORER_URL}/tx/${hash}`;
-  };
-
-  if (loading) {
+  if (showLoadingState) {
     return (
       <div className="bg-black/20 backdrop-blur-xl border border-green-400/30 rounded-lg p-6">
         <h3 className="text-lg font-semibold text-green-400 mb-4 font-mono">Transaction History</h3>
@@ -116,13 +27,13 @@ export const TransactionHistory: React.FC = () => {
     );
   }
 
-  if (error) {
+  if (error && !hasCachedData) {
     return (
       <div className="bg-black/20 backdrop-blur-xl border border-red-400/30 rounded-lg p-6">
         <h3 className="text-lg font-semibold text-red-400 mb-4 font-mono">Transaction History</h3>
         <p className="text-red-300 font-mono">{error}</p>
         <button
-          onClick={fetchTransactions}
+          onClick={refresh}
           className="mt-4 px-4 py-2 bg-green-500/10 hover:bg-green-500/20 border border-green-500/30 text-green-400 hover:text-green-300 rounded-lg transition-all duration-200 font-mono"
         >
           Retry
@@ -131,9 +42,50 @@ export const TransactionHistory: React.FC = () => {
     );
   }
 
+  const getTransactionTypeColor = (type?: string) => {
+    switch (type) {
+      case 'swap':
+        return 'text-blue-400';
+      case 'payment-link':
+        return 'text-purple-400';
+      case 'transfer':
+      default:
+        return 'text-green-400';
+    }
+  };
+
+  const getTransactionTypeLabel = (type?: string) => {
+    switch (type) {
+      case 'swap':
+        return 'SWAP';
+      case 'payment-link':
+        return 'PAYMENT LINK';
+      case 'transfer':
+      default:
+        return 'TRANSFER';
+    }
+  };
+
   return (
     <div className="bg-black/20 backdrop-blur-xl border border-green-400/30 rounded-lg p-6">
-      <h3 className="text-lg font-semibold text-green-400 mb-4 font-mono">Transaction History</h3>
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center space-x-3">
+          <h3 className="text-lg font-semibold text-green-400 font-mono">Transaction History</h3>
+          {loading && hasCachedData && (
+            <div className="flex items-center space-x-2">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-400"></div>
+              <span className="text-xs text-green-300 font-mono">Updating...</span>
+            </div>
+          )}
+        </div>
+        <button
+          onClick={refresh}
+          disabled={loading}
+          className="px-3 py-1 bg-green-500/10 hover:bg-green-500/20 border border-green-500/30 text-green-400 hover:text-green-300 rounded-lg transition-all duration-200 font-mono text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {loading ? 'Refreshing...' : 'Refresh'}
+        </button>
+      </div>
       
       {transactions.length === 0 ? (
         <p className="text-green-300 font-mono">No transactions found</p>
@@ -146,17 +98,34 @@ export const TransactionHistory: React.FC = () => {
                   {new Date(tx.timestamp).toLocaleString()}
                 </span>
                 <span className={`text-sm font-semibold font-mono ${
-                  tx.status === 'success' ? 'text-green-400' : 
+                  tx.status === 'success' ? getTransactionTypeColor(tx.type) : 
                   tx.status === 'pending' ? 'text-yellow-400' : 'text-red-400'
                 }`}>
-                  {tx.status}
+                  {getTransactionTypeLabel(tx.type)}
                 </span>
               </div>
               
               <div className="text-sm text-green-300 font-mono mb-2">
-                <div>From: {tx.from}</div>
-                <div>To: {tx.to}</div>
-                <div>Value: {parseFloat(tx.value).toFixed(4)} XFI</div>
+                {tx.type === 'swap' && tx.swapDetails ? (
+                  <>
+                    <div>Type: Token Swap</div>
+                    <div>From: {tx.from}</div>
+                    <div>Swap: {tx.swapDetails.fromAmount} {tx.swapDetails.fromToken} → {tx.swapDetails.toAmount} {tx.swapDetails.toToken}</div>
+                  </>
+                ) : tx.type === 'payment-link' ? (
+                  <>
+                    <div>Type: Payment Link Transaction</div>
+                    <div>From: {tx.from}</div>
+                    <div>To: {tx.to}</div>
+                    <div>Value: {parseFloat(tx.value).toFixed(4)} XFI</div>
+                  </>
+                ) : (
+                  <>
+                    <div>From: {tx.from}</div>
+                    <div>To: {tx.to}</div>
+                    <div>Value: {parseFloat(tx.value).toFixed(4)} XFI</div>
+                  </>
+                )}
               </div>
               
               <div className="flex justify-between items-center">
@@ -164,7 +133,7 @@ export const TransactionHistory: React.FC = () => {
                   {tx.hash.substring(0, 10)}...{tx.hash.substring(tx.hash.length - 8)}
                 </span>
                 <a
-                  href={getExplorerUrl(tx.hash)}
+                  href={tx.explorerUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-xs text-green-400 hover:text-green-300 underline font-mono"
@@ -177,12 +146,15 @@ export const TransactionHistory: React.FC = () => {
         </div>
       )}
       
-      <button
-        onClick={fetchTransactions}
-        className="mt-4 px-4 py-2 bg-green-500/10 hover:bg-green-500/20 border border-green-500/30 text-green-400 hover:text-green-300 rounded-lg transition-all duration-200 font-mono"
-      >
-        Refresh
-      </button>
+      {hasMore && (
+        <button
+          onClick={loadMore}
+          disabled={loading}
+          className="mt-4 px-4 py-2 bg-green-500/10 hover:bg-green-500/20 border border-green-500/30 text-green-400 hover:text-green-300 rounded-lg transition-all duration-200 font-mono disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {loading ? 'Loading...' : 'Load More'}
+        </button>
+      )}
     </div>
   );
 };

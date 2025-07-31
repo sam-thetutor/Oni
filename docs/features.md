@@ -1,6 +1,6 @@
  Create/Check/Manage Wallet
 
-· Swap/DCA/Limit Orders
+· DCA/Limit Orders
 
 · Trade NFTs
 
@@ -26,7 +26,7 @@
 
 · Create/Check/Manage Wallet
 
-· Swap/DCA/Limit Orders
+· DCA/Limit Orders
 
 · Trade NFTs
 

@@ -6,13 +6,19 @@ import { BACKEND_URL, EXPLORER_URL, ENVIRONMENT } from '../utils/constants';
 interface WalletBalances {
   xfi: number;
   mpx: number;
-  tUSDC: number;
+  usdt: number;
+  usdc: number;
   isLoading: boolean;
   error: string | null;
 }
 
 export const useWalletBalance = (address: string | null): WalletBalances & { refreshBalances: () => Promise<void> } => {
-  const [balances, setBalances] = useState<{ xfi: number; mpx: number; tUSDC: number }>({ xfi: 0, mpx: 0, tUSDC: 0 });
+  const [balances, setBalances] = useState<{ xfi: number; mpx: number; usdt: number; usdc: number }>({ 
+    xfi: 0, 
+    mpx: 0, 
+    usdt: 0, 
+    usdc: 0 
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { authFetch } = useBackend();
@@ -21,7 +27,7 @@ export const useWalletBalance = (address: string | null): WalletBalances & { ref
   const fetchBalances = useCallback(async () => {
     // Clear balances immediately if no wallet is connected
     if (!address || !wallets || wallets.length === 0) {
-      setBalances({ xfi: 0, mpx: 0, tUSDC: 0 });
+      setBalances({ xfi: 0, mpx: 0, usdt: 0, usdc: 0 });
       return;
     }
 
@@ -39,8 +45,8 @@ export const useWalletBalance = (address: string | null): WalletBalances & { ref
       const apiUrl = `${EXPLORER_URL}/api/1.0/addresses/${address}`;
       console.log(`  - Full API URL: ${apiUrl}`);
 
-      // Get XFI and MPX from CrossFi API
-      const [crossfiResponse, tUSDCBalances] = await Promise.all([
+      // Get XFI and MPX from CrossFi API, and token balances from backend
+      const [crossfiResponse, tokenBalancesResponse] = await Promise.all([
         fetch(apiUrl),
         authFetch(`${BACKEND_URL}/api/dca/balances`)
       ]);
@@ -67,26 +73,43 @@ export const useWalletBalance = (address: string | null): WalletBalances & { ref
       console.log(`  - XFI Balance: ${balanceInXFI}`);
       console.log(`  - MPX Balance: ${balanceInMPX}`);
 
-      // Get tUSDC balance from backend
-      let tUSDCBalance = 0;
+      // Get token balances from backend
+      let usdtBalance = 0;
+      let usdcBalance = 0;
       try {
-        const tUSDCData = await tUSDCBalances.json();
-        if (tUSDCData.success && tUSDCData.data) {
-          const tUSDCToken = tUSDCData.data.find((token: any) => token.symbol === 'tUSDC');
-          if (tUSDCToken) {
-            tUSDCBalance = parseFloat(tUSDCToken.formatted);
+        const tokenBalancesData = await tokenBalancesResponse.json();
+        console.log('Token balances response:', tokenBalancesData);
+        
+        if (tokenBalancesData.success && tokenBalancesData.data) {
+          // Find USDT and USDC balances
+          const usdtToken = tokenBalancesData.data.find((token: any) => token.symbol === 'USDT');
+          const usdcToken = tokenBalancesData.data.find((token: any) => token.symbol === 'USDC');
+          
+          if (usdtToken) {
+            usdtBalance = parseFloat(usdtToken.formatted);
+            console.log(`  - USDT Balance: ${usdtBalance}`);
+          }
+          
+          if (usdcToken) {
+            usdcBalance = parseFloat(usdcToken.formatted);
+            console.log(`  - USDC Balance: ${usdcBalance}`);
           }
         }
-      } catch (tUSDCError) {
-        console.error('Error getting tUSDC balance:', tUSDCError);
-        // Continue with 0 balance for tUSDC if there's an error
+      } catch (tokenError) {
+        console.error('Error getting token balances:', tokenError);
+        // Continue with 0 balances for tokens if there's an error
       }
       
-      setBalances({ xfi: balanceInXFI, mpx: balanceInMPX, tUSDC: tUSDCBalance });
+      setBalances({ 
+        xfi: balanceInXFI, 
+        mpx: balanceInMPX, 
+        usdt: usdtBalance, 
+        usdc: usdcBalance 
+      });
     } catch (err) {
       console.error('Error getting balances:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch balances');
-      setBalances({ xfi: 0, mpx: 0, tUSDC: 0 });
+      setBalances({ xfi: 0, mpx: 0, usdt: 0, usdc: 0 });
     } finally {
       setIsLoading(false);
     }
@@ -105,7 +128,8 @@ export const useWalletBalance = (address: string | null): WalletBalances & { ref
   return {
     xfi: balances.xfi,
     mpx: balances.mpx,
-    tUSDC: balances.tUSDC,
+    usdt: balances.usdt,
+    usdc: balances.usdc,
     isLoading,
     error,
     refreshBalances,

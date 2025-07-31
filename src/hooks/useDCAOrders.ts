@@ -66,16 +66,7 @@ export interface DCASystemStatus {
   timestamp: string;
 }
 
-export interface SwapQuote {
-  fromToken: string;
-  toToken: string;
-  fromAmountFormatted: string;
-  toAmountFormatted: string;
-  price: number;
-  minimumReceivedFormatted: string;
-  gasFeeFormatted: string;
-  slippage: number;
-}
+
 
 export const useDCAOrders = () => {
   const [orders, setOrders] = useState<DCAOrder[]>([]);
@@ -222,35 +213,7 @@ export const useDCAOrders = () => {
     }
   }, [authFetch, fetchOrders, fetchStats]);
 
-  // Get swap quote
-  const getSwapQuote = useCallback(async (params: {
-    fromToken: string;
-    toToken: string;
-    amount: string;
-    slippage?: number;
-  }): Promise<SwapQuote | null> => {
-    try {
-      const response = await authFetch('/api/dca/swap/quote', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(params)
-      });
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        return data.data;
-      } else {
-        console.error('Failed to get swap quote:', data.error);
-        return null;
-      }
-    } catch (err) {
-      console.error('Error getting swap quote:', err);
-      return null;
-    }
-  }, [authFetch]);
+
 
   // Initial load
   useEffect(() => {
@@ -275,7 +238,6 @@ export const useDCAOrders = () => {
     fetchSystemStatus,
     createOrder,
     cancelOrder,
-    getSwapQuote,
     
     // Refresh all data
     refresh: () => {

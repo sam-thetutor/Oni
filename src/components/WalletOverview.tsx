@@ -15,7 +15,13 @@ export const WalletOverview: React.FC<WalletOverviewProps> = ({ walletAddress })
   const { backendWallet, loading: walletLoading } = useBackendWallet();
   const address = walletAddress || backendWallet;
   const { balance, isUpdating, isConnected, refreshBalance } = useRealTimeWallet();
-  const { xfi: fallbackBalance, isLoading: balanceLoading, refreshBalances: refetchBalance } = useWalletBalance(address);
+  const { 
+    xfi: fallbackBalance, 
+    usdt: usdtBalance, 
+    usdc: usdcBalance,
+    isLoading: balanceLoading, 
+    refreshBalances: refetchBalance 
+  } = useWalletBalance(address);
   const { onWalletRefresh } = useRefresh();
   
   // Force refresh when address changes
@@ -36,6 +42,8 @@ export const WalletOverview: React.FC<WalletOverviewProps> = ({ walletAddress })
     realTimeBalance: balance,
     fallbackBalance,
     currentBalance,
+    usdtBalance,
+    usdcBalance,
     isLoading,
     isConnected
   });
@@ -77,26 +85,63 @@ export const WalletOverview: React.FC<WalletOverviewProps> = ({ walletAddress })
         </div>
       </div>
 
-      <WalletConnection onConnect={() => {}} />
+      <WalletConnection />
       
-      {/* Real-time Balance Display */}
-      {currentBalance && (
-        <div className="mt-4 p-4 bg-gray-800 rounded-lg">
-          <div className="flex items-center justify-between">
-            <span className="text-gray-300">Balance:</span>
-            <div className="text-right">
-              <div className="text-white font-mono text-lg">
-                {isLoading ? (
-                  <div className="animate-pulse bg-gray-600 h-6 w-24 rounded"></div>
-                ) : (
-                  `${currentBalance} XFI`
-                )}
-              </div>
-              {balance && (
-                <div className="text-xs text-green-400 mt-1">
-                  Real-time • {new Date(balance.timestamp).toLocaleTimeString()}
+      {/* Token Balances Display */}
+      {address && (
+        <div className="mt-4 space-y-3">
+          {/* XFI Balance */}
+          {currentBalance && (
+            <div className="p-4 bg-gray-800 rounded-lg">
+              <div className="flex items-center justify-between">
+                <span className="text-gray-300">XFI Balance:</span>
+                <div className="text-right">
+                  <div className="text-white font-mono text-lg">
+                    {isLoading ? (
+                      <div className="animate-pulse bg-gray-600 h-6 w-24 rounded"></div>
+                    ) : (
+                      `${currentBalance} XFI`
+                    )}
+                  </div>
+                  {balance && (
+                    <div className="text-xs text-green-400 mt-1">
+                      Real-time • {new Date(balance.timestamp).toLocaleTimeString()}
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
+            </div>
+          )}
+
+          {/* USDT Balance */}
+          <div className="p-4 bg-gray-800 rounded-lg">
+            <div className="flex items-center justify-between">
+              <span className="text-gray-300">USDT Balance:</span>
+              <div className="text-right">
+                <div className="text-white font-mono text-lg">
+                  {isLoading ? (
+                    <div className="animate-pulse bg-gray-600 h-6 w-24 rounded"></div>
+                  ) : (
+                    `${usdtBalance.toFixed(6)} USDT`
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* USDC Balance */}
+          <div className="p-4 bg-gray-800 rounded-lg">
+            <div className="flex items-center justify-between">
+              <span className="text-gray-300">USDC Balance:</span>
+              <div className="text-right">
+                <div className="text-white font-mono text-lg">
+                  {isLoading ? (
+                    <div className="animate-pulse bg-gray-600 h-6 w-24 rounded"></div>
+                  ) : (
+                    `${usdcBalance.toFixed(6)} USDC`
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>
