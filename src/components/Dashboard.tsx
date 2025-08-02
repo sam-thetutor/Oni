@@ -59,7 +59,7 @@ export const Dashboard: React.FC<DashboardProps> = () => {
                 >
                   Transaction History
                 </button>
-                <button
+                {/* <button
                   onClick={() => setActiveTab('actions')}
                   className={`flex-1 py-4 px-6 text-sm font-medium transition-all ${
                     activeTab === 'actions'
@@ -68,7 +68,7 @@ export const Dashboard: React.FC<DashboardProps> = () => {
                   }`}
                 >
                   Quick Actions
-                </button>
+                </button> */}
               </div>
 
               <div className="p-6">

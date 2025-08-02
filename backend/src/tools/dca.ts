@@ -5,6 +5,8 @@ import { DCAExecutorService } from '../services/dca-executor.js';
 import { TokenService } from '../services/tokens.js';
 import { PriceAnalyticsService } from '../services/price-analytics.js';
 import { WalletService } from '../services/wallet.js';
+import { MongoDBService } from '../services/mongodb.js';
+import { IUser } from '../models/User.js';
 import { DCA_LIMITS, validateTriggerPrice, validateSlippage } from '../constants/tokens.js';
 
 /**
@@ -13,7 +15,9 @@ import { DCA_LIMITS, validateTriggerPrice, validateSlippage } from '../constants
  */
 export async function createDCAOrder(params: {
   userId: string;
-  orderType: 'buy' | 'sell';
+  orderType: 'swap';
+  fromToken: 'USDC' | 'XFI';
+  toToken: 'USDC' | 'XFI';
   amount: string;
   triggerPrice: number;
   triggerCondition: 'above' | 'below';
@@ -26,8 +30,8 @@ export async function createDCAOrder(params: {
   orderDetails?: any;
 }> {
   try {
-    // Get user wallet by address (userId is actually wallet address)
-    const user = await WalletService.getWalletByAddress(params.userId);
+    // Get user by frontend wallet address (userId is the frontend wallet address)
+    const user = await MongoDBService.getWalletByFrontendAddress(params.userId);
     if (!user) {
       return {
         success: false,
@@ -58,9 +62,11 @@ export async function createDCAOrder(params: {
 
     // Create DCA order parameters
     const dcaParams: CreateDCAOrderParams = {
-      userId: user.privyId, // Use the actual privyId for DCA order storage
+      userId: user.walletAddress, // Use backend wallet address as userId
       walletAddress: user.walletAddress,
       orderType: params.orderType,
+      fromToken: params.fromToken,
+      toToken: params.toToken,
       fromAmount: params.amount,
       triggerPrice: params.triggerPrice,
       triggerCondition: params.triggerCondition,
@@ -75,28 +81,29 @@ export async function createDCAOrder(params: {
     const currentPrice = await PriceAnalyticsService.getMarketData().then(data => data.current_price);
     
     // Format response message
-    const tokenSymbol = params.orderType === 'buy' ? 'USDC' : 'XFI';
-    const targetSymbol = params.orderType === 'buy' ? 'XFI' : 'USDC';
     const conditionText = params.triggerCondition === 'above' ? 'reaches or exceeds' : 'drops to or below';
+    const priceDirection = params.triggerCondition === 'above' ? 'UP' : 'DOWN';
+    const priceDifference = Math.abs(currentPrice - params.triggerPrice);
+    const percentageChange = ((priceDifference / currentPrice) * 100).toFixed(2);
     
     return {
       success: true,
       orderId: order._id.toString(),
       message: `✅ DCA order created successfully!\n\n` +
         `📊 Order Details:\n` +
-        `• Type: ${params.orderType === 'buy' ? 'Buy XFI with USDC' : 'Sell XFI for USDC'}\n` +
-        `• Amount: ${params.amount} ${tokenSymbol}\n` +
+        `• Type: Swap ${params.amount} ${params.fromToken} to ${params.toToken}\n` +
         `• Trigger: When XFI price ${conditionText} $${params.triggerPrice}\n` +
         `• Current Price: $${currentPrice.toFixed(6)}\n` +
+        `• Price needs to move ${priceDirection} by ${percentageChange}% ($${priceDifference.toFixed(6)})\n` +
         `• Slippage: ${slippage}%\n` +
         `• Expires: ${expiresAt.toLocaleDateString()}\n\n` +
-        `🔄 Your order will be automatically executed when the conditions are met.`,
+        `🔄 Your order will be automatically executed when the price moves ${priceDirection} to reach the trigger.`,
       orderDetails: {
         orderId: order._id.toString(),
         orderType: params.orderType,
         fromAmount: params.amount,
-        fromToken: tokenSymbol,
-        toToken: targetSymbol,
+        fromToken: params.fromToken,
+        toToken: params.toToken,
         triggerPrice: params.triggerPrice,
         triggerCondition: params.triggerCondition,
         currentPrice,
@@ -137,7 +144,7 @@ export async function getUserDCAOrders(params: {
     }
 
     const orders = await DCAService.getUserDCAOrders(
-      user.privyId, // Use privyId for DCA order lookup
+      user.walletAddress, // Use backend wallet address for DCA order lookup
       params.status,
       params.limit || 10
     );
@@ -174,7 +181,7 @@ export async function getUserDCAOrders(params: {
     let message = `📋 Your${statusText} DCA Orders (Current XFI Price: $${currentPrice.toFixed(6)}):\n\n`;
     
     formattedOrders.forEach((order, index) => {
-      message += `${index + 1}. ${order.statusEmoji} ${order.orderType === 'buy' ? 'Buy' : 'Sell'} ${order.fromAmountFormatted} ${order.fromToken}\n`;
+      message += `${index + 1}. ${order.statusEmoji} Swap ${order.fromAmountFormatted} ${order.fromToken} to ${order.toToken}\n`;
       message += `   • Trigger: $${order.triggerPrice} (${order.priceDistance} from current)\n`;
       message += `   • Status: ${order.status}\n`;
       message += `   • Created: ${new Date(order.createdAt).toLocaleDateString()}\n\n`;
@@ -281,8 +288,8 @@ export async function getDCAOrderStatus(params: {
     // Format message based on order status
     let message = `📊 DCA Order Details (${order._id})\n\n`;
     message += `${getStatusEmoji(order.status)} Status: ${order.status.toUpperCase()}\n`;
-            message += `💱 Type: ${order.orderType === 'buy' ? 'Buy XFI with USDC' : 'Sell XFI for USDC'}\n`;
-          message += `💰 Amount: ${TokenService.formatTokenAmount(order.fromAmount, order.orderType === 'buy' ? 6 : 18)} ${order.orderType === 'buy' ? 'USDC' : 'XFI'}\n`;
+            message += `💱 Type: Swap ${order.fromToken} to ${order.toToken}\n`;
+    message += `💰 Amount: ${order.fromAmount} ${order.fromToken}\n`;
     message += `🎯 Trigger: $${order.triggerPrice} (${distanceText})\n`;
     message += `📈 Current Price: $${currentPrice.toFixed(6)}\n`;
     message += `📅 Created: ${order.createdAt.toLocaleString()}\n`;
@@ -332,8 +339,8 @@ export async function getDCAOrderStatus(params: {
  * Provides a quote for immediate token swap
  */
 export async function getSwapQuote(params: {
-  fromToken: 'XFI' | 'CFI' | 'WXFI' | 'FOMO' | 'WETH' | 'USDC' | 'WBTC' | 'USDT' | 'BNB' | 'SOL' | 'XUSD';
-  toToken: 'XFI' | 'CFI' | 'WXFI' | 'FOMO' | 'WETH' | 'USDC' | 'WBTC' | 'USDT' | 'BNB' | 'SOL' | 'XUSD';
+  fromToken: 'XFI' | 'CFI' | 'WXFI' | 'FOMO' | 'WETH' | 'USDC' | 'WBTC' | 'BNB' | 'SOL' | 'XUSD';
+  toToken: 'XFI' | 'CFI' | 'WXFI' | 'FOMO' | 'WETH' | 'USDC' | 'WBTC' | 'BNB' | 'SOL' | 'XUSD';
   amount: string;
   slippage?: number;
 }): Promise<{
@@ -446,7 +453,7 @@ export async function getUserTokenBalances(params: {
       message += `${balance.symbol === 'XFI' ? '🔵' : '🟢'} ${balance.symbol}: ${parseFloat(balance.formatted).toFixed(6)}\n`;
     });
 
-    message += `\n💡 You can create DCA orders to automatically swap between XFI and USDC/USDT based on price triggers.`;
+    message += `\n💡 You can create DCA orders to automatically swap between XFI and USDC based on price triggers. USDC↔XFI is the recommended stablecoin pair with accurate pricing (~13.12 XFI per 1 USDC). Note: USDT is temporarily disabled due to incorrect pricing.`;
 
     return {
       success: true,
@@ -472,4 +479,4 @@ function getStatusEmoji(status: string): string {
     case 'expired': return '⏰';
     default: return '❓';
   }
-} 
+}

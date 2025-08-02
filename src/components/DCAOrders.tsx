@@ -5,10 +5,13 @@ import { EXPLORER_URL } from '../utils/constants';
 interface DCAOrder {
   id: string;
   userId: string;
-  type: 'buy' | 'sell';
-  token: string;
-  amount: number;
+  orderType: 'swap';
+  fromToken: string;
+  toToken: string;
+  fromAmount: string;
+  fromAmountFormatted: string;
   triggerPrice: number;
+  triggerCondition: 'above' | 'below';
   status: 'active' | 'executed' | 'cancelled' | 'failed' | 'expired';
   createdAt: string;
   executedAt?: string;
@@ -63,8 +66,8 @@ export const DCAOrders: React.FC = () => {
     }
   };
 
-  const getTypeColor = (type: string) => {
-    return type === 'buy' ? 'text-green-400' : 'text-red-400';
+  const getSwapColor = (fromToken: string, toToken: string) => {
+    return 'text-blue-400'; // All swaps are blue for consistency
   };
 
   if (loading) {
@@ -105,11 +108,11 @@ export const DCAOrders: React.FC = () => {
             <div key={order.id} className="bg-black/10 backdrop-blur-xl border border-green-400/20 rounded-lg p-4">
               <div className="flex justify-between items-start mb-2">
                 <div className="flex items-center space-x-2">
-                  <span className={`text-sm font-semibold font-mono ${getTypeColor(order.type)}`}>
-                    {order.type.toUpperCase()}
+                  <span className={`text-sm font-semibold font-mono ${getSwapColor(order.fromToken, order.toToken)}`}>
+                    SWAP
                   </span>
                   <span className="text-sm text-green-300 font-mono">
-                    {order.amount} {order.token}
+                    {order.fromAmountFormatted} {order.fromToken} → {order.toToken}
                   </span>
                 </div>
                 <span className={`text-sm font-semibold font-mono ${getStatusColor(order.status)}`}>
@@ -118,7 +121,7 @@ export const DCAOrders: React.FC = () => {
               </div>
               
               <div className="text-sm text-green-300 font-mono mb-2">
-                <div>Trigger Price: ${order.triggerPrice}</div>
+                <div>Trigger: When XFI price {order.triggerCondition} ${order.triggerPrice}</div>
                 <div>Created: {new Date(order.createdAt).toLocaleString()}</div>
                 {order.executedAt && (
                   <div>Executed: {new Date(order.executedAt).toLocaleString()}</div>

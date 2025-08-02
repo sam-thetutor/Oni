@@ -4,6 +4,7 @@ import { Header } from '../components/Header';
 import { WalletOverview } from '../components/WalletOverview';
 import { Footer } from '../components/Footer';
 import { Roadmap } from '../components/Roadmap';
+import { AnalyticsOverview } from '../components/AnalyticsOverview';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { useNavigate } from 'react-router-dom';
 import { Bot, Wallet, TrendingUp, Activity, ArrowRight, Sparkles, Shield, Zap, Globe, Users } from 'lucide-react';
@@ -15,23 +16,17 @@ export const HomePage= () => {
   const { wallets } = useWallets();
   const wallet = wallets[0];
 
-  // Redirect authenticated users to AI interface
-  // useEffect(() => {
-  //   if (authenticated && wallets.length > 0) {
-  //     navigate('/ai');
-  //   }
-  // }, [authenticated, wallets, navigate]);
 
-  // Show landing page for non-authenticated users
   
   return (
-    <div className="min-h-screen relative">
+    <div className="relative">
       <Header />
       
-      {/* Hero Section */}
-      <div className="relative z-10 container mx-auto px-4 py-16">
-        <div className="text-center mb-16">
-          <div className="flex items-center justify-center mb-6">
+      {/* Hero Section - Full Screen Height */}
+      <div className="relative z-10 min-h-screen flex items-center justify-center">
+        <div className="container mx-auto px-4 text-center">
+          <div className="flex items-center flex-col justify-center mb-6">
+            <img src={oniLogo} alt="Oni" className="w-16 h-12 md:w-32 md:h-36 mr-4" />
             <h1 className="text-5xl md:text-7xl font-bold text-green-400 font-mono tracking-wider">
               Oni
             </h1>
@@ -45,15 +40,20 @@ export const HomePage= () => {
           </p>
           <button
             onClick={() => login()}
-            className="bg-black/20 backdrop-blur-xl border-2 border-green-400 text-green-400 font-semibold py-4 px-12 rounded-xl transition-all duration-200 transform hover:scale-105 text-lg flex items-center mx-auto hover:bg-green-400 hover:text-black font-mono"
+            className="bg-black/20 backdrop-blur-xl border-2 border-green-400 text-green-400 font-semibold py-3 px-8 rounded-md transition-all duration-200 transform hover:scale-105 text-base hover:bg-green-400 hover:text-black font-mono"
           >
-            <img src={oniLogo} alt="Oni" className="w-12 h-8" />
             Get Started with Oni
           </button>
         </div>
+      </div>
+
+      {/* Content Sections - Below Hero */}
+      <div className="container mx-auto px-4 py-1">
+        {/* Analytics Section */}
+        <AnalyticsOverview />
 
         {/* Features Section */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+        {/* <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
           <div className=" p-8 text-center hover:border-green-400 transition-colors duration-300">
             <Bot className="w-16 h-16 text-green-400 mx-auto mb-4" />
             <h3 className="text-2xl font-semibold text-white mb-4 font-mono">AI-Powered Trading</h3>
@@ -77,7 +77,7 @@ export const HomePage= () => {
               Native support for CrossFi blockchain with XFI and MPX token management.
             </p>
           </div>
-        </div>
+        </div> */}
 
         {/* Vision Section */}
         <div className=" rounded-3xl p-12 mb-16">

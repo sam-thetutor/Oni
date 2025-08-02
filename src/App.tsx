@@ -32,7 +32,7 @@ function AppContent() {
   // Show initializing page
   if (!ready || showInitializing) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center relative overflow-hidden">
+      <div className="min-h-screen  flex items-center justify-center relative overflow-hidden">
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-5">
           <div className="absolute inset-0" style={{

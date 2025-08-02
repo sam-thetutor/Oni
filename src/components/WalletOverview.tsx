@@ -113,24 +113,8 @@ export const WalletOverview: React.FC<WalletOverviewProps> = ({ walletAddress })
             </div>
           )}
 
-          {/* USDT Balance */}
-          <div className="p-4 bg-gray-800 rounded-lg">
-            <div className="flex items-center justify-between">
-              <span className="text-gray-300">USDT Balance:</span>
-              <div className="text-right">
-                <div className="text-white font-mono text-lg">
-                  {isLoading ? (
-                    <div className="animate-pulse bg-gray-600 h-6 w-24 rounded"></div>
-                  ) : (
-                    `${usdtBalance.toFixed(6)} USDT`
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* USDC Balance */}
-          <div className="p-4 bg-gray-800 rounded-lg">
+          {/* USDC Balance (Primary Stablecoin) */}
+          <div className="p-4 bg-gray-800 rounded-lg border-l-4 border-blue-500">
             <div className="flex items-center justify-between">
               <span className="text-gray-300">USDC Balance:</span>
               <div className="text-right">
@@ -140,6 +124,24 @@ export const WalletOverview: React.FC<WalletOverviewProps> = ({ walletAddress })
                   ) : (
                     `${usdcBalance.toFixed(6)} USDC`
                   )}
+                </div>
+                <div className="text-xs text-blue-400 mt-1">
+                  Primary stablecoin
+                </div>
+                <div className="text-xs text-gray-400 mt-1">
+                  💡 "Swap 10 USDC to XFI" for ~133 XFI
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* USDT Balance (Disabled) */}
+          <div className="p-4 bg-gray-800 rounded-lg opacity-50">
+            <div className="flex items-center justify-between">
+              <span className="text-gray-400">USDT Balance (Disabled):</span>
+              <div className="text-right">
+                <div className="text-gray-500 font-mono text-lg">
+                  Temporarily unavailable
                 </div>
               </div>
             </div>

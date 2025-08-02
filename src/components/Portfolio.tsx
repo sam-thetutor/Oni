@@ -77,7 +77,7 @@ export const Portfolio: React.FC<PortfolioProps> = ({ walletAddress }) => {
         {/* XFI Balance */}
         <div className="bg-white/5 rounded-lg border border-white/10 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h4 className="text-sm font-medium text-gray-400">XFI Balance</h4>
+            {/* <h4 className="text-sm font-medium text-gray-400">XFI Balance</h4> */}
             <div className="w-8 h-8 bg-yellow-500/20 rounded-lg flex items-center justify-center">
               <span className="text-yellow-400 font-bold text-sm">X</span>
             </div>
@@ -89,7 +89,7 @@ export const Portfolio: React.FC<PortfolioProps> = ({ walletAddress }) => {
           ) : error ? (
             <div className="text-red-400 text-sm">Error loading balance</div>
           ) : (
-            <div className="text-2xl font-bold text-yellow-400">
+            <div className="text-xl font-bold text-yellow-400">
               {formatBalance(xfi)} XFI
             </div>
           )}
@@ -98,7 +98,7 @@ export const Portfolio: React.FC<PortfolioProps> = ({ walletAddress }) => {
         {/* MPX Balance */}
         <div className="bg-white/5 rounded-lg border border-white/10 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h4 className="text-sm font-medium text-gray-400">MPX Balance</h4>
+            {/* <h4 className="text-sm font-medium text-gray-400">MPX Balance</h4> */}
             <div className="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center">
               <span className="text-blue-400 font-bold text-sm">M</span>
             </div>
@@ -110,37 +110,16 @@ export const Portfolio: React.FC<PortfolioProps> = ({ walletAddress }) => {
           ) : error ? (
             <div className="text-red-400 text-sm">Error loading balance</div>
           ) : (
-            <div className="text-2xl font-bold text-blue-400">
+            <div className="text-xl font-bold text-blue-400">
               {formatBalance(mpx)} MPX
             </div>
           )}
         </div>
 
-        {/* USDT Balance */}
-        <div className="bg-white/5 rounded-lg border border-white/10 p-6">
+        {/* USDC Balance (Primary Stablecoin) */}
+        <div className="bg-white/5 rounded-lg border border-blue-500/30 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h4 className="text-sm font-medium text-gray-400">USDT Balance</h4>
-            <div className="w-8 h-8 bg-green-500/20 rounded-lg flex items-center justify-center">
-              <span className="text-green-400 font-bold text-sm">T</span>
-            </div>
-          </div>
-          {isLoading ? (
-            <div className="animate-pulse">
-              <div className="h-8 bg-gray-600/20 rounded mb-2"></div>
-            </div>
-          ) : error ? (
-            <div className="text-red-400 text-sm">Error loading balance</div>
-          ) : (
-            <div className="text-2xl font-bold text-green-400">
-              {formatBalance(usdt)} USDT
-            </div>
-          )}
-        </div>
-
-        {/* USDC Balance */}
-        <div className="bg-white/5 rounded-lg border border-white/10 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h4 className="text-sm font-medium text-gray-400">USDC Balance</h4>
+            {/* <h4 className="text-xs font-medium text-blue-300">USDC Balance (Primary Stablecoin)</h4> */}
             <div className="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center">
               <span className="text-blue-400 font-bold text-sm">C</span>
             </div>
@@ -152,11 +131,27 @@ export const Portfolio: React.FC<PortfolioProps> = ({ walletAddress }) => {
           ) : error ? (
             <div className="text-red-400 text-sm">Error loading balance</div>
           ) : (
-            <div className="text-2xl font-bold text-blue-400">
+            <div className="text-xl font-bold text-blue-400">
               {formatBalance(usdc)} USDC
             </div>
           )}
+          {/* <div className="text-xs text-gray-400 bg-blue-500/10 p-2 rounded mt-3">
+            💡 Try: "Swap 10 USDC to XFI" for ~133 XFI
+          </div> */}
         </div>
+
+        {/* USDT Balance (Disabled) */}
+        {/* <div className="bg-white/5 rounded-lg border border-white/10 p-6 opacity-50">
+          <div className="flex items-center justify-between mb-4">
+            <h4 className="text-sm font-medium text-gray-400">USDT Balance (Disabled)</h4>
+            <div className="w-8 h-8 bg-gray-500/20 rounded-lg flex items-center justify-center">
+              <span className="text-gray-400 font-bold text-sm">T</span>
+            </div>
+          </div>
+          <div className="text-sm text-gray-400">
+            Temporarily unavailable
+          </div>
+        </div> */}
       </div>
 
       {/* Error Message */}
@@ -176,5 +171,5 @@ export const Portfolio: React.FC<PortfolioProps> = ({ walletAddress }) => {
         </div>
       )}
     </div>
-  );
-}; 
+      );
+  }; 

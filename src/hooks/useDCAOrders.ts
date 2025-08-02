@@ -4,10 +4,10 @@ import { useRefresh } from '../context/RefreshContext';
 import { BACKEND_URL } from '../utils/constants';
 
 export interface DCAOrder {
-  _id: string;
+  id: string;
   userId: string;
   walletAddress: string;
-  orderType: 'buy' | 'sell';
+  orderType: 'swap';
   fromAmount: string;
   fromAmountFormatted: string;
   fromToken: string;
@@ -95,7 +95,7 @@ export const useDCAOrders = () => {
       const data = await response.json();
       
       if (data.success) {
-        setOrders(data.data || []);
+        setOrders(data.orders || []);
       } else {
         setError(data.error || 'Failed to fetch DCA orders');
       }
@@ -152,7 +152,9 @@ export const useDCAOrders = () => {
 
   // Create DCA order
   const createOrder = useCallback(async (orderData: {
-    orderType: 'buy' | 'sell';
+    orderType: 'swap';
+    fromToken: 'USDC' | 'XFI';
+    toToken: 'USDC' | 'XFI';
     amount: string;
     triggerPrice: number;
     triggerCondition: 'above' | 'below';

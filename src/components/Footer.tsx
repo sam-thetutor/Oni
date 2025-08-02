@@ -102,7 +102,7 @@ export const Footer: React.FC = () => {
         {/* Bottom Section */}
         <div className=" mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
           <p className="text-green-300 text-sm font-mono">
-            © 2024 Oni. All rights reserved. Powered by CrossFi blockchain technology.
+            © 2025 Oni. All rights reserved. Powered by CrossFi blockchain technology.
           </p>
           <div className="flex space-x-6 mt-4 md:mt-0">
             <a href="#" className="text-green-300 hover:text-green-400 text-sm transition-colors duration-200 font-mono">

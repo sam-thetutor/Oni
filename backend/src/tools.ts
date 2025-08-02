@@ -18,6 +18,7 @@ import { getIO } from "./socket/index.js";
 import { emitBalanceUpdate, emitNewTransaction, emitPointsEarned, emitTransactionSuccess } from "./socket/events.js";
 import dotenv from 'dotenv';
 import { IntelligentTool } from "./tools/intelligentTool.js";
+import { AnalyticsService } from "./services/analytics.js";
 dotenv.config();
 
 // Import new price analysis tools
@@ -46,6 +47,11 @@ let currentUserFrontendWalletAddress: string | null = null;
 // Function to set current user frontend wallet address (called by the graph)
 export const setCurrentUserFrontendWalletAddress = (frontendWalletAddress: string) => {
   currentUserFrontendWalletAddress = frontendWalletAddress;
+};
+
+// Function to get current user frontend wallet address
+export const getCurrentUserFrontendWalletAddress = (): string | null => {
+  return currentUserFrontendWalletAddress;
 };
 
 // Wallet Info Tool
@@ -149,7 +155,7 @@ class GetWalletForOperationsTool extends StructuredTool {
 // Get Balance Tool
 class GetBalanceTool extends StructuredTool {
   name = "get_balance";
-  description = "Gets the balance of the user's wallet";
+  description = "Gets the balance of the user's wallet including XFI and USDC tokens";
   schema = z.object({});
 
   protected async _call(input: z.infer<typeof this.schema>, runManager?: any): Promise<string> {
@@ -188,16 +194,39 @@ class GetBalanceTool extends StructuredTool {
       console.log(`  - Chain ID: ${process.env.CHAIN_ID}`);
       console.log(`  - User Address: ${user.walletAddress}`);
 
-      const balance = await BlockchainService.getBalance(user.walletAddress);
+      // Get XFI balance
+      const xfiBalance = await BlockchainService.getBalance(user.walletAddress);
       
-      console.log(`  - Balance Result:`, balance);
+      // Get USDC balance
+      let usdcBalance = null;
+      try {
+        const tokenBalances = await TokenService.getDCATokenBalances(user.walletAddress);
+        const usdcToken = tokenBalances.find(token => token.symbol === 'USDC');
+        if (usdcToken) {
+          usdcBalance = {
+            balance: usdcToken.balance,
+            formatted: usdcToken.formatted,
+            symbol: 'USDC',
+            decimals: usdcToken.decimals
+          };
+        }
+      } catch (error) {
+        console.log(`  - USDC balance fetch failed: ${error}`);
+        // Continue without USDC balance if there's an error
+      }
+      
+      console.log(`  - XFI Balance Result:`, xfiBalance);
+      console.log(`  - USDC Balance Result:`, usdcBalance);
       
       return JSON.stringify({
         success: true,
-        address: balance.address,
-        balance: balance.balance,
-        formatted: balance.formatted,
-        symbol: 'XFI',
+        address: xfiBalance.address,
+        xfi: {
+          balance: xfiBalance.balance,
+          formatted: xfiBalance.formatted,
+          symbol: 'XFI'
+        },
+        usdc: usdcBalance,
         debug: {
           environment: process.env.ENVIRONMENT,
           rpcUrl: process.env.RPC_URL,
@@ -310,6 +339,21 @@ class SendTransactionTool extends StructuredTool {
           });
         }
 
+        // Record analytics for successful transaction
+        try {
+          await AnalyticsService.recordTransaction(
+            frontendWalletAddress,
+            user.walletAddress,
+            amount,
+            'XFI',
+            'send',
+            transaction.hash,
+            'completed'
+          );
+        } catch (analyticsError) {
+          console.warn('⚠️ Failed to record transaction analytics:', analyticsError);
+        }
+
         // Get and emit updated balance
         setTimeout(async () => {
           try {
@@ -343,9 +387,9 @@ class SendTransactionTool extends StructuredTool {
 
 class SendTokenTool extends StructuredTool {
   name = "send_token";
-  description = "Sends USDT or USDC tokens from the user's wallet to another address. Use this when user says 'send USDT', 'transfer USDC', 'send 10 USDT to address', etc.";
+  description = "Sends USDC tokens from the user's wallet to another address. Use this when user says 'send USDC', 'transfer USDC', 'send 10 USDC to address', etc. Note: USDT is temporarily disabled due to incorrect pricing.";
   schema = z.object({
-    token: z.enum(["USDT", "USDC"]).describe("The token to send (USDT or USDC)"),
+    token: z.enum(["USDC"]).describe("The token to send (USDT temporarily disabled)"),
     to: z.string().describe("The recipient wallet address"),
     amount: z.string().describe("The amount to send (e.g., '10.5')")
   });
@@ -838,9 +882,21 @@ class CreatePaymentLinksTool extends StructuredTool {
         );
         // Create global payment link in database
         const paymentLink = await PaymentLinkService.createGlobalPaymentLink(
-          frontendWalletAddress, 
+          user.walletAddress, // Use backend wallet address
           paymentLinkID
         );
+        // Record analytics for payment link creation
+        try {
+          await AnalyticsService.recordPaymentLink(
+            frontendWalletAddress,
+            user.walletAddress,
+            '0', // Global links don't have a fixed amount
+            'XFI'
+          );
+        } catch (analyticsError) {
+          console.warn('⚠️ Failed to record payment link analytics:', analyticsError);
+        }
+
         // Return plain JSON (no markdown)
         return JSON.stringify({
           success: true,
@@ -863,10 +919,22 @@ class CreatePaymentLinksTool extends StructuredTool {
         );
         // Create fixed payment link in database
         const paymentLink = await PaymentLinkService.createPaymentLink(
-          frontendWalletAddress, 
+          user.walletAddress, // Use backend wallet address
           Number(amount), 
           paymentLinkID
         );
+        // Record analytics for payment link creation
+        try {
+          await AnalyticsService.recordPaymentLink(
+            frontendWalletAddress,
+            user.walletAddress,
+            amount,
+            'XFI'
+          );
+        } catch (analyticsError) {
+          console.warn('⚠️ Failed to record payment link analytics:', analyticsError);
+        }
+
         // Return plain JSON (no markdown)
         return JSON.stringify({
           success: true,
@@ -1260,14 +1328,16 @@ class CheckPaymentLinkStatusTool extends StructuredTool {
 // Create DCA Order Tool
 class CreateDCAOrderTool extends StructuredTool {
   name = "create_dca_order";
-  description = "Creates an automated DCA (Dollar Cost Averaging) order to buy or sell XFI when the price reaches a trigger condition. Users can say things like 'buy 10 USDC when XFI hits $0.05' or 'sell 5 XFI if price drops below $0.04'";
+  description = "Creates an automated DCA (Dollar Cost Averaging) order to swap tokens when the price reaches a trigger condition. IMPORTANT: orderType must be 'swap' (not 'buy' or 'sell'). Examples: 'swap 10 USDC to XFI when XFI reaches $0.05' = orderType: 'swap', fromToken: 'USDC', toToken: 'XFI', amount: '10', triggerPrice: 0.05, triggerCondition: 'below'. 'swap 5 XFI to USDC when XFI reaches $0.04' = orderType: 'swap', fromToken: 'XFI', toToken: 'USDC', amount: '5', triggerPrice: 0.04, triggerCondition: 'above'. All numeric values (triggerPrice, slippage, expirationDays) must be numbers, not strings.";
   schema = z.object({
-    orderType: z.enum(["buy", "sell"]).describe("Order type: 'buy' or 'sell'"),
-    amount: z.string().describe("Amount to buy or sell"),
-    triggerPrice: z.number().describe("Trigger price for the order"),
-    triggerCondition: z.enum(["above", "below"]).describe("Trigger condition: 'above' or 'below'"),
-    slippage: z.number().optional().describe("Maximum slippage percentage (default: 5%)"),
-    expirationDays: z.number().optional().describe("Order expiration in days (default: 30)")
+    orderType: z.enum(["swap"]).describe("Order type: 'swap' (swap between USDC and XFI)"),
+    fromToken: z.enum(["USDC", "XFI"]).describe("Token to swap from: 'USDC' or 'XFI'"),
+    toToken: z.enum(["USDC", "XFI"]).describe("Token to swap to: 'USDC' or 'XFI'"),
+    amount: z.string().describe("Amount to swap (e.g., '10' for 10 USDC or '5' for 5 XFI)"),
+    triggerPrice: z.number().describe("Trigger price in USD (e.g., 0.05 for $0.05)"),
+    triggerCondition: z.enum(["above", "below"]).describe("Trigger condition: 'above' (execute when price goes above trigger) or 'below' (execute when price goes below trigger)"),
+    slippage: z.number().optional().describe("Maximum slippage percentage as number (e.g., 5 for 5%, default: 5)"),
+    expirationDays: z.number().optional().describe("Order expiration in days as number (e.g., 30 for 30 days, default: 30)")
   });
 
   protected async _call(input: z.infer<typeof this.schema>, runManager?: any): Promise<string> {
@@ -1276,21 +1346,66 @@ class CreateDCAOrderTool extends StructuredTool {
       if (!frontendWalletAddress) {
         return JSON.stringify({ success: false, error: 'User not authenticated. Please try again.' });
       }
+      
       // Validate required fields
       const { orderType, amount, triggerPrice, triggerCondition, slippage, expirationDays } = input;
-      if (!orderType || !amount || triggerPrice === undefined || !triggerCondition) {
-        return JSON.stringify({ success: false, error: 'Missing required DCA order fields.' });
+      
+      // Enhanced validation with clear error messages
+      if (!orderType) {
+        return JSON.stringify({ success: false, error: 'Missing orderType. Must be "swap".' });
       }
+      if (orderType !== 'swap') {
+        return JSON.stringify({ success: false, error: `Invalid orderType: "${orderType}". Must be "swap".` });
+      }
+      if (!amount) {
+        return JSON.stringify({ success: false, error: 'Missing amount to swap.' });
+      }
+      if (triggerPrice === undefined || triggerPrice === null) {
+        return JSON.stringify({ success: false, error: 'Missing triggerPrice. Must be a number (e.g., 0.05 for $0.05).' });
+      }
+      if (typeof triggerPrice !== 'number') {
+        return JSON.stringify({ success: false, error: `Invalid triggerPrice: "${triggerPrice}". Must be a number, not a string.` });
+      }
+      if (!triggerCondition) {
+        return JSON.stringify({ success: false, error: 'Missing triggerCondition. Must be "above" or "below".' });
+      }
+      if (triggerCondition !== 'above' && triggerCondition !== 'below') {
+        return JSON.stringify({ success: false, error: `Invalid triggerCondition: "${triggerCondition}". Must be "above" or "below".` });
+      }
+      
       const params = {
         userId: frontendWalletAddress,
         orderType,
+        fromToken: input.fromToken,
+        toToken: input.toToken,
         amount,
         triggerPrice,
         triggerCondition,
         slippage,
         expirationDays
       };
+      
+      console.log(`🔍 CreateDCAOrderTool: Creating DCA order with params:`, params);
+      
       const result = await createDCAOrder(params);
+      
+      // Record analytics for successful DCA order creation
+      if (result.success) {
+        try {
+          const user = await MongoDBService.getWalletByFrontendAddress(frontendWalletAddress);
+          if (user) {
+            await AnalyticsService.recordDCAOrder(
+              frontendWalletAddress,
+              user.walletAddress,
+              amount,
+              input.fromToken as 'XFI' | 'USDC'
+            );
+          }
+        } catch (analyticsError) {
+          console.warn('⚠️ Failed to record DCA order analytics:', analyticsError);
+        }
+      }
+      
       return JSON.stringify(result);
     } catch (error: any) {
       console.error('Error in create_dca_order:', error);
@@ -1393,10 +1508,10 @@ class GetDCAOrderStatusTool extends StructuredTool {
 // Get Swap Quote Tool
 class GetSwapQuoteTool extends StructuredTool {
   name = "get_swap_quote";
-  description = "Gets a quote/estimate for a token swap WITHOUT executing it. Use this when user asks for 'quote', 'estimate', 'how much will I get', or 'check price'. DO NOT use this when user says 'swap', 'execute', 'trade', or 'now swap'. Working pairs include: XFI↔USDT, XFI↔USDC, WXFI↔FOMO, WXFI↔WETH, WXFI↔USDC, WXFI↔WBTC, WXFI↔USDT, WXFI↔BNB, WXFI↔SOL, WXFI↔XUSD, USDC↔XUSD, USDT↔XUSD";
+  description = "Gets a quote/estimate for a token swap WITHOUT executing it. Use this when user asks for 'quote', 'estimate', 'how much will I get', or 'check price'. DO NOT use this when user says 'swap', 'execute', 'trade', or 'now swap'. PRIMARY PAIRS: USDC↔XFI (recommended), XFI↔USDC. When swapping USDC to XFI, users get NATIVE XFI tokens (not WXFI). Other pairs: WXFI↔FOMO, WXFI↔WETH, WXFI↔WBTC, WXFI↔BNB, WXFI↔SOL, WXFI↔XUSD, USDC↔XUSD. NOTE: USDT swaps are temporarily disabled due to incorrect pricing.";
   schema = z.object({
-          fromToken: z.enum(["XFI", "CFI", "WXFI", "FOMO", "WETH", "USDC", "WBTC", "USDT", "BNB", "SOL", "XUSD"]).describe("Token to swap from"),
-      toToken: z.enum(["XFI", "CFI", "WXFI", "FOMO", "WETH", "USDC", "WBTC", "USDT", "BNB", "SOL", "XUSD"]).describe("Token to swap to"),
+          fromToken: z.enum(["XFI", "CFI", "WXFI", "FOMO", "WETH", "USDC", "WBTC", "BNB", "SOL", "XUSD"]).describe("Token to swap from (USDT temporarily disabled)"),
+      toToken: z.enum(["XFI", "CFI", "WXFI", "FOMO", "WETH", "USDC", "WBTC", "BNB", "SOL", "XUSD"]).describe("Token to swap to (USDT temporarily disabled)"),
     amount: z.string().describe("Amount to swap"),
     slippage: z.union([z.number(), z.string()]).optional().describe("Maximum slippage percentage (default: 5%). Can be a number or string.")
   });
@@ -1421,7 +1536,7 @@ class GetSwapQuoteTool extends StructuredTool {
       const mappedFromToken = fromToken === 'XFI' ? 'CFI' : fromToken;
       const mappedToToken = toToken === 'XFI' ? 'CFI' : toToken;
       
-      const params: { fromToken: "XFI" | "CFI" | "WXFI" | "FOMO" | "WETH" | "USDC" | "WBTC" | "USDT" | "BNB" | "SOL" | "XUSD"; toToken: "XFI" | "CFI" | "WXFI" | "FOMO" | "WETH" | "USDC" | "WBTC" | "USDT" | "BNB" | "SOL" | "XUSD"; amount: string; slippage?: number } = {
+      const params: { fromToken: "XFI" | "CFI" | "WXFI" | "FOMO" | "WETH" | "USDC" | "WBTC" | "BNB" | "SOL" | "XUSD"; toToken: "XFI" | "CFI" | "WXFI" | "FOMO" | "WETH" | "USDC" | "WBTC" | "BNB" | "SOL" | "XUSD"; amount: string; slippage?: number } = {
         fromToken: mappedFromToken,
         toToken: mappedToToken,
         amount
@@ -1435,8 +1550,8 @@ class GetSwapQuoteTool extends StructuredTool {
       if (!result.success && result.message.includes('getAmountsOut') && result.message.includes('reverted')) {
         const workingPairs = [
           'WXFI ↔ FOMO', 'WXFI ↔ WETH', 'WXFI ↔ USDC', 'WXFI ↔ WBTC', 
-          'WXFI ↔ USDT', 'WXFI ↔ BNB', 'WXFI ↔ SOL', 'WXFI ↔ XUSD',
-          'USDC ↔ XUSD', 'USDT ↔ XUSD'
+          'WXFI ↔ BNB', 'WXFI ↔ SOL', 'WXFI ↔ XUSD',
+          'USDC ↔ XUSD'
         ];
         
         return JSON.stringify({
@@ -1476,7 +1591,7 @@ class GetDCASystemStatusTool extends StructuredTool {
 // Get User Token Balances Tool
 class GetUserTokenBalancesTool extends StructuredTool {
   name = "get_user_token_balances";
-  description = "Gets the user's current balances for DCA-supported tokens (XFI, USDC, and USDT)";
+  description = "Gets the user's current balances for DCA-supported tokens (XFI, USDC). Note: USDT is temporarily disabled due to incorrect pricing.";
   schema = z.object({});
 
   protected async _call(input: z.infer<typeof this.schema>, runManager?: any): Promise<string> {
@@ -1558,65 +1673,162 @@ class AddLiquidityTool extends StructuredTool {
 // Execute Swap Tool
 class ExecuteSwapTool extends StructuredTool {
   name = "execute_swap";
-  description = "ACTUALLY EXECUTES a token swap on the blockchain. Use this when user says 'swap', 'execute', 'trade', 'now swap', 'perform swap', or 'do the swap'. This will create a real transaction. Working pairs include: XFI↔USDT, XFI↔USDC, WXFI↔FOMO, WXFI↔WETH, WXFI↔USDC, WXFI↔WBTC, WXFI↔USDT, WXFI↔BNB, WXFI↔SOL, WXFI↔XUSD, USDC↔XUSD, USDT↔XUSD";
+  description = "ACTUALLY EXECUTES a token swap on the blockchain. Use this when user says 'swap', 'execute', 'trade', 'now swap', 'perform swap', or 'do the swap'. This will create a real transaction. PRIMARY PAIRS: USDC↔XFI (recommended), XFI↔USDC. When swapping USDC to XFI, users get NATIVE XFI tokens (not WXFI). Approvals are handled automatically - no need to approve tokens separately. IMPORTANT: User must have their wallet properly configured in the system for transactions to work. Other pairs: WXFI↔FOMO, WXFI↔WETH, WXFI↔WBTC, WXFI↔BNB, WXFI↔SOL, WXFI↔XUSD, USDC↔XUSD. NOTE: USDT swaps are temporarily disabled due to incorrect pricing.";
   schema = z.object({
-    fromToken: z.enum(["XFI", "CFI", "WXFI", "FOMO", "WETH", "USDC", "WBTC", "USDT", "BNB", "SOL", "XUSD"]).describe("Token to swap from"),
-    toToken: z.enum(["XFI", "CFI", "WXFI", "FOMO", "WETH", "USDC", "WBTC", "USDT", "BNB", "SOL", "XUSD"]).describe("Token to swap to"),
+    fromToken: z.enum(["XFI", "CFI", "WXFI", "FOMO", "WETH", "USDC", "WBTC", "BNB", "SOL", "XUSD"]).describe("Token to swap from (USDT temporarily disabled)"),
+    toToken: z.enum(["XFI", "CFI", "WXFI", "FOMO", "WETH", "USDC", "WBTC", "BNB", "SOL", "XUSD"]).describe("Token to swap to (USDT temporarily disabled)"),
     fromAmount: z.string().describe("Amount of fromToken to swap"),
     slippage: z.union([z.number(), z.string()]).optional().describe("Maximum slippage percentage (default: 5%). Can be a number or string.")
   });
 
   protected async _call(input: z.infer<typeof this.schema>, runManager?: any): Promise<string> {
     try {
+      console.log('🔄 ExecuteSwapTool: Starting swap execution...');
+      console.log('📝 Input parameters:', JSON.stringify(input, null, 2));
+      
       const frontendWalletAddress = currentUserFrontendWalletAddress;
+      console.log('👤 Frontend wallet address:', frontendWalletAddress);
+      
       if (!frontendWalletAddress) {
+        console.log('❌ ExecuteSwapTool: No frontend wallet address found');
         return JSON.stringify({ 
           success: false, 
           error: 'User not authenticated. Please try again.' 
         });
       }
 
+      console.log('🔍 ExecuteSwapTool: Looking up user in database...');
       // Get user from database
       const user = await MongoDBService.getWalletByFrontendAddress(frontendWalletAddress);
+      console.log('👤 User found in database:', user ? '✅ Yes' : '❌ No');
+      
       if (!user) {
+        console.log('❌ ExecuteSwapTool: User wallet not found in database');
         return JSON.stringify({ 
           success: false, 
           error: 'User wallet not found in database' 
         });
       }
 
+      console.log('🔑 ExecuteSwapTool: Checking encrypted private key...');
+      console.log('🔑 User wallet address:', user.walletAddress);
+      console.log('🔑 Has encrypted private key:', user.encryptedPrivateKey ? '✅ Yes' : '❌ No');
+      console.log('🔑 Private key length:', user.encryptedPrivateKey ? user.encryptedPrivateKey.length : 0);
+      
+      // Check if user has encrypted private key stored
+      if (!user.encryptedPrivateKey) {
+        console.log('❌ ExecuteSwapTool: User wallet not configured for transactions');
+        return JSON.stringify({ 
+          success: false, 
+          error: 'User wallet not configured for transactions. Please connect your wallet through the frontend first.' 
+        });
+      }
+
       const { fromToken, toToken, fromAmount, slippage } = input;
+      console.log('💰 ExecuteSwapTool: Swap details:');
+      console.log('   From Token:', fromToken);
+      console.log('   To Token:', toToken);
+      console.log('   Amount:', fromAmount);
+      console.log('   Slippage:', slippage);
       
       // Convert slippage to number if it's a string, default to 5
       let slippageNumber: number = 5;
       if (slippage !== undefined) {
         slippageNumber = typeof slippage === 'string' ? parseFloat(slippage) : slippage;
         if (isNaN(slippageNumber)) {
+          console.log('❌ ExecuteSwapTool: Invalid slippage value');
           return JSON.stringify({ success: false, error: 'Invalid slippage value. Must be a number.' });
         }
       }
+      console.log('📊 ExecuteSwapTool: Processed slippage:', slippageNumber);
 
-      // Map XFI to CFI since they point to the same address
-      const mappedFromToken = fromToken === 'XFI' ? 'CFI' : fromToken;
-      const mappedToToken = toToken === 'XFI' ? 'CFI' : toToken;
+      // For USDC to XFI swaps, we need to swap to WXFI first, then convert to native XFI
+      // The path should be: USDC → WXFI → Native XFI (via unwrap)
+      let mappedFromToken = fromToken;
+      let mappedToToken = toToken;
+      
+      if (fromToken === 'USDC' && toToken === 'XFI') {
+        mappedToToken = 'WXFI'; // Swap to WXFI first, then unwrap to native XFI
+        console.log('🔄 ExecuteSwapTool: USDC to XFI swap detected - will swap to WXFI then unwrap');
+      } else if (fromToken === 'XFI' && toToken === 'USDC') {
+        mappedFromToken = 'WXFI'; // Swap from WXFI (wrapped XFI)
+        console.log('🔄 ExecuteSwapTool: XFI to USDC swap detected - will unwrap XFI to WXFI first');
+      }
+      
+      console.log('🔄 ExecuteSwapTool: Token mapping:');
+      console.log('   From:', fromToken, '→', mappedFromToken);
+      console.log('   To:', toToken, '→', mappedToToken);
 
       // Validate that tokens are different
       if (mappedFromToken === mappedToToken) {
+        console.log('❌ ExecuteSwapTool: Cannot swap token for itself');
         return JSON.stringify({
           success: false,
           error: 'Cannot swap a token for itself. Please choose different tokens.'
         });
       }
 
+      console.log('🔍 ExecuteSwapTool: Getting user model for SwapService...');
       // Get user from User model for SwapService
       const userModel = await User.findOne({ frontendWalletAddress });
+      console.log('👤 User model found:', userModel ? '✅ Yes' : '❌ No');
+      
       if (!userModel) {
+        console.log('❌ ExecuteSwapTool: User not found in User model');
         return JSON.stringify({ 
           success: false, 
           error: 'User not found in database' 
         });
       }
 
+      console.log('🔧 ExecuteSwapTool: Using database wallet for all operations');
+      console.log('   Database wallet:', userModel.walletAddress);
+      console.log('   Frontend wallet:', frontendWalletAddress);
+      console.log('   Note: All operations use database wallet address');
+
+      // Check USDC balance in database wallet
+      if (fromToken === 'USDC') {
+        console.log('💰 ExecuteSwapTool: Checking USDC balance in database wallet...');
+        try {
+          const { publicClient } = await import('./config/viem.js');
+          const { getTokenBySymbol } = await import('./constants/tokens.js');
+          const { parseUnits, formatUnits } = await import('viem');
+          
+          const usdcToken = getTokenBySymbol('USDC');
+          const balance = await publicClient.readContract({
+            address: usdcToken.address as any,
+            abi: [
+              {
+                inputs: [{ name: 'account', type: 'address' }],
+                name: 'balanceOf',
+                outputs: [{ name: '', type: 'uint256' }],
+                stateMutability: 'view',
+                type: 'function'
+              }
+            ],
+            functionName: 'balanceOf',
+            args: [userModel.walletAddress as any]
+          }) as bigint;
+          
+          const balanceFormatted = formatUnits(balance, usdcToken.decimals);
+          const requiredAmount = parseFloat(fromAmount);
+          
+          console.log(`   USDC Balance: ${balanceFormatted}`);
+          console.log(`   Required: ${requiredAmount}`);
+          console.log(`   Sufficient: ${parseFloat(balanceFormatted) >= requiredAmount ? '✅ Yes' : '❌ No'}`);
+          
+          if (parseFloat(balanceFormatted) < requiredAmount) {
+            return JSON.stringify({
+              success: false,
+              error: `Insufficient USDC balance. Required: ${requiredAmount}, Available: ${balanceFormatted}`
+            });
+          }
+        } catch (error) {
+          console.log('   ❌ Error checking USDC balance:', error);
+        }
+      }
+
+      console.log('💰 ExecuteSwapTool: Getting swap quote...');
       // First get a quote to validate the swap
       const quote = await SwapService.getSwapQuote({
         fromToken: mappedFromToken,
@@ -1624,25 +1836,17 @@ class ExecuteSwapTool extends StructuredTool {
         fromAmount,
         slippage: slippageNumber
       });
-
-      // Validate the swap
-      const validation = await SwapService.validateSwap(userModel, {
-        fromToken: mappedFromToken,
-        toToken: mappedToToken,
-        fromAmount,
-        slippage: slippageNumber
+      console.log('✅ ExecuteSwapTool: Quote received successfully');
+      console.log('   Quote details:', {
+        fromAmount: quote.fromAmountFormatted,
+        toAmount: quote.toAmountFormatted,
+        price: quote.price,
+        path: quote.path
       });
 
-      if (!validation.valid) {
-        return JSON.stringify({
-          success: false,
-          error: validation.error || 'Swap validation failed',
-          warnings: validation.warnings,
-          balance: validation.balance,
-          allowance: validation.allowance,
-          needsApproval: validation.needsApproval
-        });
-      }
+      console.log('🚀 ExecuteSwapTool: Executing swap transaction...');
+      // Note: We skip validation here because SwapService.executeSwap handles approvals automatically
+      // The validation step was causing issues where users couldn't proceed with swaps that needed approval
 
       // Execute the swap
       const swapResult = await SwapService.executeSwap(userModel, {
@@ -1651,10 +1855,25 @@ class ExecuteSwapTool extends StructuredTool {
         fromAmount,
         slippage: slippageNumber
       });
+      console.log('📊 ExecuteSwapTool: Swap result received');
+      console.log('   Success:', swapResult.success);
+      console.log('   Transaction hash:', swapResult.transactionHash);
+      console.log('   Error:', swapResult.error);
+      console.log('   Error code:', swapResult.errorCode);
 
       if (swapResult.success) {
+        console.log('✅ ExecuteSwapTool: Swap successful!');
+        console.log('   Transaction hash:', swapResult.transactionHash);
+        console.log('   From amount:', swapResult.fromAmount);
+        console.log('   To amount:', swapResult.toAmount);
+        console.log('   Gas used:', swapResult.gasUsed);
+        console.log('   Gas price:', swapResult.gasPrice);
+        console.log('   Unwrap hash:', swapResult.unwrapTransactionHash || 'None');
+        console.log('   Final token:', swapResult.finalToken || 'Not specified');
+        
         // Emit real-time events
         try {
+          console.log('📡 ExecuteSwapTool: Emitting real-time events...');
           const io = getIO();
           
           // Emit transaction success
@@ -1693,11 +1912,20 @@ class ExecuteSwapTool extends StructuredTool {
           }, 1000); // Wait 1 second for blockchain to update
 
         } catch (socketError) {
-          console.error('Error emitting real-time events:', socketError);
+          console.error('❌ ExecuteSwapTool: Error emitting real-time events:', socketError);
           // Don't fail the transaction if real-time updates fail
         }
 
-        return JSON.stringify({
+        console.log('📝 ExecuteSwapTool: Building success response...');
+        // Build success message
+        let message = `Successfully swapped ${fromAmount} ${fromToken} for ${swapResult.toAmount} ${toToken}`;
+        
+        // Add unwrap information if WXFI was converted to native XFI
+        if (swapResult.unwrapTransactionHash) {
+          message += ` (converted to native XFI)`;
+        }
+        
+        const result: any = {
           success: true,
           transactionHash: swapResult.transactionHash,
           fromToken,
@@ -1707,9 +1935,22 @@ class ExecuteSwapTool extends StructuredTool {
           gasUsed: swapResult.gasUsed,
           gasPrice: swapResult.gasPrice,
           explorerUrl: `${process.env.ENVIRONMENT === 'production' ? 'https://xfiscan.com' : 'https://test.xfiscan.com'}/tx/${swapResult.transactionHash}`,
-          message: `Successfully swapped ${fromAmount} ${fromToken} for ${swapResult.toAmount} ${toToken}`
-        });
+          message
+        };
+        
+        // Add unwrap transaction info if available
+        if (swapResult.unwrapTransactionHash) {
+          result.unwrapTransactionHash = swapResult.unwrapTransactionHash;
+          result.unwrapExplorerUrl = `${process.env.ENVIRONMENT === 'production' ? 'https://xfiscan.com' : 'https://test.xfiscan.com'}/tx/${swapResult.unwrapTransactionHash}`;
+          result.finalToken = swapResult.finalToken;
+        }
+        
+        console.log('✅ ExecuteSwapTool: Returning success response');
+        return JSON.stringify(result);
       } else {
+        console.log('❌ ExecuteSwapTool: Swap failed');
+        console.log('   Error:', swapResult.error);
+        console.log('   Error code:', swapResult.errorCode);
         return JSON.stringify({
           success: false,
           error: swapResult.error || 'Swap execution failed',
@@ -1718,7 +1959,9 @@ class ExecuteSwapTool extends StructuredTool {
       }
 
     } catch (error: any) {
-      console.error('Error in execute_swap:', error);
+      console.error('❌ ExecuteSwapTool: Unexpected error:', error);
+      console.error('   Error message:', error.message);
+      console.error('   Error stack:', error.stack);
       return JSON.stringify({ 
         success: false, 
         error: error.message 
@@ -1730,7 +1973,7 @@ class ExecuteSwapTool extends StructuredTool {
 // Get Supported Swap Tokens Tool
 class GetSupportedSwapTokensTool extends StructuredTool {
   name = "get_supported_swap_tokens";
-  description = "Gets the list of supported tokens for swapping";
+  description = "Gets the list of supported tokens for swapping. PRIMARY PAIRS: USDC↔XFI (recommended for stablecoin swaps). Note: USDT is temporarily disabled due to incorrect pricing.";
   schema = z.object({});
 
   protected async _call(input: z.infer<typeof this.schema>, runManager?: any): Promise<string> {
@@ -1738,15 +1981,25 @@ class GetSupportedSwapTokensTool extends StructuredTool {
       const supportedTokens = SwapService.getSupportedPairs();
       const swapConfig = SwapService.getSwapConfig();
       
-      return JSON.stringify({
-        success: true,
-        supportedTokens: swapConfig.SUPPORTED_TOKENS,
-        tradingPairs: supportedTokens.map(pair => ({
-          from: pair.from,
-          to: pair.to,
-          description: pair.description
-        })),
-        totalPairs: supportedTokens.length,
+      // Filter out any USDT pairs that might still exist
+      const filteredPairs = supportedTokens.filter(pair => 
+        pair.from !== 'USDT' && pair.to !== 'USDT'
+      );
+      
+                   return JSON.stringify({
+               success: true,
+               supportedTokens: swapConfig.SUPPORTED_TOKENS,
+               tradingPairs: filteredPairs.map(pair => ({
+                 from: pair.from,
+                 to: pair.to,
+                 description: pair.description
+               })),
+               totalPairs: filteredPairs.length,
+               primaryPairs: filteredPairs.filter(pair => 
+                 (pair.from === 'USDC' && pair.to === 'XFI') ||
+                 (pair.from === 'XFI' && pair.to === 'USDC')
+               ),
+               note: "USDT swaps are temporarily disabled due to incorrect pricing. USDC↔XFI is the recommended stablecoin pair with accurate pricing (~13.12 XFI per 1 USDC).",
         config: {
           defaultSlippage: swapConfig.DEFAULT_SLIPPAGE,
           minSlippage: swapConfig.MIN_SLIPPAGE,

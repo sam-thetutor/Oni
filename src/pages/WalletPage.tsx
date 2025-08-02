@@ -315,6 +315,14 @@ export const WalletPage = () => {
     }
   }, [activeTab, backendWallet, fetchTransactionHistory]);
 
+  // Fetch payment links when user visits the payment-links tab
+  useEffect(() => {
+    if (activeTab === 'payment-links' && backendWallet) {
+      console.log('🔗 WalletPage: User visited payment links tab, fetching payment links for backend wallet:', backendWallet);
+      fetchPaymentLinks(1, 10, filter);
+    }
+  }, [activeTab, backendWallet, fetchPaymentLinks, filter]);
+
   // Handle filter change
   const handleFilterChange = (newFilter: 'all' | 'fixed' | 'global') => {
     setFilter(newFilter);
@@ -346,7 +354,7 @@ export const WalletPage = () => {
   const tabs = [
     { id: 'overview', label: 'Wallet', shortLabel: 'Wallet', icon: Wallet },
     { id: 'history', label: 'Transactions', shortLabel: 'History', icon: History },
-    { id: 'actions', label: 'Quick Actions', shortLabel: 'Actions', icon: Zap },
+    // { id: 'actions', label: 'Quick Actions', shortLabel: 'Actions', icon: Zap },
     { id: 'payment-links', label: 'Payment Links', shortLabel: 'Links', icon: LinkIcon },
     { id: 'dca-orders', label: 'DCA Orders', shortLabel: 'DCA', icon: TrendingUp },
   ] as const;
