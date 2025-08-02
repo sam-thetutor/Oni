@@ -178,7 +178,7 @@ export const AnalyticsOverview: React.FC = () => {
       </div>
 
       {/* Additional Stats */}
-      {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-green-400/10 border-2 border-green-400/30 rounded-xl p-6 hover:border-green-400/50 transition-all duration-300">
           <div className="flex items-center mb-3">
             <Link className="w-5 h-5 text-green-400 mr-2" />
@@ -204,12 +204,9 @@ export const AnalyticsOverview: React.FC = () => {
             {formatTokenAmount(analytics.totalDCAOrders.totalVolume.xfi, 2)} XFI total
           </div>
         </div>
-      </div> */}
+      </div> 
 
-      {/* Last Updated */}
-      {/* <div className="text-center mt-8 text-xs text-green-300 font-mono">
-        Last updated: {new Date().toLocaleString()}
-      </div> */}
+  
     </div>
   );
 }; 

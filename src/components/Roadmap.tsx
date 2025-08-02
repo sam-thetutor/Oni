@@ -3,7 +3,7 @@ import { CheckCircle, Target, Rocket, Star } from 'lucide-react';
 
 export const Roadmap: React.FC = () => {
   return (
-    <div className="mb-16">
+    <div className="mb-16 mt-32">
       <div className="text-center mb-12">
         <h2 className="text-4xl font-bold text-white mb-6 font-mono">Development Roadmap</h2>
         <p className="text-xl text-green-300 max-w-4xl mx-auto font-mono">

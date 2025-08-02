@@ -80,7 +80,7 @@ export const HomePage= () => {
         </div> */}
 
         {/* Vision Section */}
-        <div className=" rounded-3xl p-12 mb-16">
+        <div className=" rounded-3xl p-12 mt-32 mb-16">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold text-white mb-3 font-mono">Our Vision</h2>
             <p className="text-xl text-green-300 max-w-4xl mx-auto font-mono">
