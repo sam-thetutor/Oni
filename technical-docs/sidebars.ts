@@ -5,6 +5,18 @@ const sidebars: SidebarsConfig = {
   // But you can create a sidebar manually
   tutorialSidebar: [
     'intro',
+    'getting-started',
+    {
+      type: 'category',
+      label: 'User Guide',
+      items: [
+        'user-guide/navigation',
+        'user-guide/features',
+        'user-guide/visual-tutorials',
+        'user-guide/platform-gallery',
+        'user-guide/troubleshooting',
+      ],
+    },
     {
       type: 'category',
       label: 'Technical Documentation',
@@ -13,15 +25,6 @@ const sidebars: SidebarsConfig = {
         'technical/api-reference',
         'technical/database',
         'technical/blockchain',
-      ],
-    },
-    {
-      type: 'category',
-      label: 'User Guide',
-      items: [
-        'user-guide/navigation',
-        'user-guide/features',
-        'user-guide/troubleshooting',
       ],
     },
   ],

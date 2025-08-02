@@ -37,10 +37,20 @@
 - **Market Analysis**: Real-time market data processing
 - **Strategy Optimization**: Automated strategy adjustments
 - **Risk Management**: Built-in risk controls
+- **Natural Language Processing**: Chat with AI using plain English
+- **Automated Execution**: Execute trades and transactions through AI commands
 
 ![AI Agent Interface](/img/features/ai-agent.png)
 
 *Access AI-powered trading strategies and intelligent market analysis tools.*
+
+![AI Chat Interface](/img/Screenshot%202025-08-02%20at%2018.54.05.png)
+
+*Interact with the AI agent using natural language commands for trading and analysis.*
+
+![AI Response Interface](/img/Screenshot%202025-08-02%20at%2018.54.11.png)
+
+*Receive intelligent responses and automated actions from the AI agent.*
 
 ## User Interface
 
@@ -49,10 +59,20 @@
 - **Recent Activity**: Latest transactions and orders
 - **Quick Actions**: Fast access to common features
 - **Real-time Updates**: Live data without page refresh
+- **Analytics Integration**: Built-in performance metrics
+- **Portfolio Tracking**: Real-time asset monitoring
 
 ![Dashboard Overview](/img/navigation/dashboard-overview.png)
 
 *The main dashboard provides a comprehensive overview of your portfolio and trading activities.*
+
+![Dashboard Details](/img/Screenshot%202025-08-02%20at%2018.48.47.png)
+
+*Detailed dashboard view showing wallet information, balance, and transaction history.*
+
+![Navigation Interface](/img/Screenshot%202025-08-02%20at%2018.48.56.png)
+
+*Main navigation interface with access to all platform features and sections.*
 
 ### Leaderboard
 - **User Rankings**: See how you rank against other users

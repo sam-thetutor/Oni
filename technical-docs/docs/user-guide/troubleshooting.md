@@ -12,6 +12,11 @@
 
 *The wallet connection interface should show a clear "Connect Wallet" button and network status.*
 
+**Common Error State:**
+![Wallet Connection Error](/img/Screenshot%202025-08-02%20at%2018.48.30.png)
+
+*If you see this screen, ensure your wallet is properly connected to the CrossFi network.*
+
 **Solutions**:
 1. Check if your wallet extension is installed and enabled
 2. Ensure you're on the correct network (CrossFi testnet/mainnet)
@@ -45,6 +50,15 @@
 ![Payment Links Interface](/img/features/payment-links.png)
 
 *The payment links interface should show active links with clear status indicators.*
+
+**Payment Link Creation Process:**
+![Payment Link Creation](/img/Screenshot%202025-08-02%20at%2018.49.10.png)
+
+*Proper payment link creation interface with configuration options.*
+
+![Payment Link Setup](/img/Screenshot%202025-08-02%20at%2018.49.16.png)
+
+*Payment link setup form with amount and description fields.*
 
 **Solutions**:
 1. Verify the payment link is still active
