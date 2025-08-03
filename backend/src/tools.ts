@@ -17,7 +17,7 @@ import { TOKEN_ADDRESSES } from "./constants/tokens.js";
 import { getIO } from "./socket/index.js";
 import { emitBalanceUpdate, emitNewTransaction, emitPointsEarned, emitTransactionSuccess } from "./socket/events.js";
 import dotenv from 'dotenv';
-import { IntelligentTool } from "./tools/intelligentTool.js";
+
 import { AnalyticsService } from "./services/analytics.js";
 dotenv.config();
 
@@ -35,6 +35,7 @@ import {
   createDCAOrder,
   getUserDCAOrders,
   cancelDCAOrder,
+  deleteDCAOrder,
   getDCAOrderStatus,
   getSwapQuote,
   getDCASystemStatus,
@@ -57,7 +58,7 @@ export const getCurrentUserFrontendWalletAddress = (): string | null => {
 // Wallet Info Tool
 class GetWalletInfoTool extends StructuredTool {
   name = "get_wallet_info";
-  description = "Gets information about the user's wallet";
+  description = "Gets information about the user's wallet. NO PARAMETERS NEEDED - just call this tool with empty arguments {}.";
   schema = z.object({});
 
   async _call(input: z.infer<typeof this.schema>, runManager?: any) {
@@ -100,7 +101,7 @@ class GetWalletInfoTool extends StructuredTool {
 // Get Wallet for Operations Tool
 class GetWalletForOperationsTool extends StructuredTool {
   name = "get_wallet_for_operations";
-  description = "Gets the user's wallet information for blockchain operations (includes private key)";
+  description = "Gets the user's wallet information for blockchain operations (includes private key). NO PARAMETERS NEEDED - just call this tool with empty arguments {}.";
   schema = z.object({});
 
   protected async _call(input: z.infer<typeof this.schema>, runManager?: any): Promise<string> {
@@ -155,7 +156,7 @@ class GetWalletForOperationsTool extends StructuredTool {
 // Get Balance Tool
 class GetBalanceTool extends StructuredTool {
   name = "get_balance";
-  description = "Gets the balance of the user's wallet including XFI and USDC tokens";
+  description = "Gets the balance of the user's wallet including XFI and USDC tokens. NO PARAMETERS NEEDED - just call this tool with empty arguments {}.";
   schema = z.object({});
 
   protected async _call(input: z.infer<typeof this.schema>, runManager?: any): Promise<string> {
@@ -246,16 +247,27 @@ class GetBalanceTool extends StructuredTool {
 // Send Transaction Tool
 class SendTransactionTool extends StructuredTool {
   name = "send_transaction";
-  description = "Sends a transaction from the user's wallet to another address";
+  description = "Sends a transaction from the user's wallet to another address. Use this when user says 'send XFI', 'transfer XFI', 'send 10 XFI to address', etc.";
   schema = z.object({
     to: z.string().describe("The recipient wallet address"),
-    amount: z.string().describe("The amount to send in XFI (e.g., '0.1')"),
+    amount: z.string().describe("The amount to send (e.g., '1 XFI', '0.5 XFI', '10 XFI'). Must include the token name 'XFI'."),
     data: z.string().optional().describe("Optional transaction data (hex string)")
   });
 
   protected async _call(input: z.infer<typeof this.schema>, runManager?: any): Promise<string> {
     try {
       const { to, amount, data } = input;
+      
+      // Extract numeric amount from the input (e.g., "1 XFI" -> "1")
+      const numericAmount = amount.replace(/\s*XFI\s*$/i, '').trim();
+      const parsedAmount = parseFloat(numericAmount);
+      
+      if (isNaN(parsedAmount) || parsedAmount <= 0) {
+        return JSON.stringify({ 
+          success: false, 
+          error: `Invalid amount: ${amount}. Please provide a valid positive number.` 
+        });
+      }
       // Get frontend wallet address from global variable
       const frontendWalletAddress = currentUserFrontendWalletAddress;
       if (!frontendWalletAddress) {
@@ -288,7 +300,7 @@ class SendTransactionTool extends StructuredTool {
           error: 'User not found in database' 
         });
       }
-      const transaction = await BlockchainService.sendTransaction(userModel, to, amount, data);
+      const transaction = await BlockchainService.sendTransaction(userModel, to, parsedAmount.toString(), data);
       
       // Build response object
       const response: any = {
@@ -604,7 +616,7 @@ class GetTransactionHistoryTool extends StructuredTool {
 // Get User Stats Tool
 class GetUserStatsTool extends StructuredTool {
   name = "get_user_stats";
-  description = "Gets the current user's gamification stats (points, rank, achievements)";
+  description = "Gets the current user's gamification stats (points, rank, achievements). NO PARAMETERS NEEDED - just call this tool with empty arguments {}.";
   schema = z.object({});
 
   protected async _call(input: z.infer<typeof this.schema>, runManager?: any): Promise<string> {
@@ -771,7 +783,7 @@ class SetUsernameTool extends StructuredTool {
 // Create Global Payment Link Tool (Explicit)
 class CreateGlobalPaymentLinkTool extends StructuredTool {
   name = "create_global_payment_link";
-  description = "Explicitly creates a global payment link that can accept any amount of contributions from multiple users. Note: The general create_payment_links tool automatically creates global links when no amount is specified.";
+  description = "Creates a global payment link for donations that can accept any amount of contributions from multiple users. Use this when user asks for 'payment link', 'donations', or 'global payment link' without specifying an amount. NO PARAMETERS NEEDED - just call this tool with empty arguments.";
   schema = z.object({});
 
   protected async _call(input: z.infer<typeof this.schema>, runManager?: any): Promise<string> {
@@ -809,7 +821,7 @@ class CreateGlobalPaymentLinkTool extends StructuredTool {
       );
       // Create global payment link in database
       const paymentLink = await PaymentLinkService.createGlobalPaymentLink(
-        frontendWalletAddress, 
+        user.walletAddress, // Use backend wallet address for consistency
         globalLinkID
       );
       // Return plain JSON (no markdown)
@@ -819,8 +831,8 @@ class CreateGlobalPaymentLinkTool extends StructuredTool {
         type: 'global',
         status: paymentLink.status,
         transactionHash: transactionHash,
-        paymentUrl: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/global-paylink/${globalLinkID}`,
-        shareableLink: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/global-paylink/${globalLinkID}`,
+        paymentUrl: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/global/${globalLinkID}`,
+        shareableLink: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/global/${globalLinkID}`,
         description: 'Global payment link allows unlimited contributions from multiple users',
         createdAt: paymentLink.createdAt,
         updatedAt: paymentLink.updatedAt
@@ -838,9 +850,9 @@ class CreateGlobalPaymentLinkTool extends StructuredTool {
 // Create Payment Links Tool
 class CreatePaymentLinksTool extends StructuredTool {
   name = "create_payment_links";
-  description = "Creates a payment link. If amount is specified, creates a fixed payment link. If no amount is specified, creates a global payment link that accepts any contributions.";
+  description = "Creates a fixed payment link with a specific amount. Use this when user specifies an amount like 'create payment link for 10 XFI'. For global donation links without amount, use create_global_payment_link instead.";
   schema = z.object({
-    amount: z.string().optional().describe("Optional: The amount for a fixed payment link in XFI (e.g., '0.1'). If not provided, creates a global payment link.")
+    amount: z.string().describe("The amount for a fixed payment link (e.g., '10 XFI', '0.5 XFI', '100 XFI'). Must include the token name 'XFI'.")
   });
 
   protected async _call(input: z.infer<typeof this.schema>, runManager?: any): Promise<string> {
@@ -911,16 +923,27 @@ class CreatePaymentLinksTool extends StructuredTool {
           updatedAt: paymentLink.updatedAt
         });
       } else {
+        // Extract numeric amount from the input (e.g., "3 XFI" -> "3")
+        const numericAmount = amount.replace(/\s*XFI\s*$/i, '').trim();
+        const parsedAmount = parseFloat(numericAmount);
+        
+        if (isNaN(parsedAmount) || parsedAmount <= 0) {
+          return JSON.stringify({ 
+            success: false, 
+            error: `Invalid amount: ${amount}. Please provide a valid positive number.` 
+          });
+        }
+        
         // Create fixed payment link on blockchain
         const transactionHash = await PaymentLinkService.createPaymentLinkOnChain(
           walletForOps.privateKey, 
           paymentLinkID, 
-          amount
+          parsedAmount.toString()
         );
         // Create fixed payment link in database
         const paymentLink = await PaymentLinkService.createPaymentLink(
           user.walletAddress, // Use backend wallet address
-          Number(amount), 
+          parsedAmount, 
           paymentLinkID
         );
         // Record analytics for payment link creation
@@ -928,7 +951,7 @@ class CreatePaymentLinksTool extends StructuredTool {
           await AnalyticsService.recordPaymentLink(
             frontendWalletAddress,
             user.walletAddress,
-            amount,
+            parsedAmount.toString(),
             'XFI'
           );
         } catch (analyticsError) {
@@ -1236,6 +1259,70 @@ class ContributeToGlobalPaymentLinkTool extends StructuredTool {
   }
 }
 
+// Delete Payment Link Tool
+class DeletePaymentLinkTool extends StructuredTool {
+  name = "delete_payment_link";
+  description = "Permanently deletes a payment link by link ID. Use this when user says 'delete payment link', 'remove payment link', or 'delete link ID'. This will completely remove the payment link from the system and it will no longer appear in the list.";
+  schema = z.object({
+    linkId: z.string().describe("The ID of the payment link to delete")
+  });
+
+  protected async _call(input: z.infer<typeof this.schema>, runManager?: any): Promise<string> {
+    try {
+      const { linkId } = input;
+      
+      // Get frontend wallet address from global variable
+      const frontendWalletAddress = currentUserFrontendWalletAddress;
+      
+      if (!frontendWalletAddress) {
+        return JSON.stringify({ 
+          success: false, 
+          error: 'User not authenticated. Please try again.' 
+        });
+      }
+
+      // Get user from database
+      const user = await MongoDBService.getWalletByFrontendAddress(frontendWalletAddress);
+      
+      if (!user) {
+        return JSON.stringify({ 
+          success: false, 
+          error: 'User wallet not found in database' 
+        });
+      }
+
+      // Find and completely delete the payment link from database
+      const paymentLink = await PaymentLink.findOneAndDelete({
+        linkId: linkId,
+        userId: user.walletAddress 
+      });
+
+      if (!paymentLink) {
+        return JSON.stringify({ 
+          success: false, 
+          error: 'Payment link not found or you do not have permission to delete it' 
+        });
+      }
+
+      return JSON.stringify({
+        success: true,
+        message: `✅ Payment link ${linkId} has been completely removed from the system.`,
+        data: {
+          linkId: paymentLink.linkId,
+          type: paymentLink.amount === 0 ? 'global' : 'fixed',
+          deleted: true
+        }
+      });
+    } catch (error: any) {
+      console.error('Error deleting payment link:', error);
+      return JSON.stringify({ 
+        success: false, 
+        error: error.message 
+      });
+    }
+  }
+}
+
 // Check Payment Link Status Tool
 class CheckPaymentLinkStatusTool extends StructuredTool {
   name = "check_payment_link_status";
@@ -1477,6 +1564,44 @@ class CancelDCAOrderTool extends StructuredTool {
   }
 }
 
+// Delete DCA Order Tool
+class DeleteDCAOrderTool extends StructuredTool {
+  name = "delete_dca_order";
+  description = "Permanently deletes a DCA order by order ID. Use this when user says 'delete DCA order', 'remove DCA order', or 'delete order ID'. This will completely remove the order from the system.";
+  schema = z.object({
+    orderId: z.string().describe("The ID of the DCA order to delete permanently")
+  });
+
+  protected async _call(input: z.infer<typeof this.schema>, runManager?: any): Promise<string> {
+    try {
+      const frontendWalletAddress = currentUserFrontendWalletAddress;
+      if (!frontendWalletAddress) {
+        return JSON.stringify({ success: false, error: 'User not authenticated. Please try again.' });
+      }
+      const { orderId } = input;
+      if (!orderId) {
+        return JSON.stringify({ success: false, error: 'Missing required orderId.' });
+      }
+      
+      // First cancel the order if it's active
+      try {
+        const cancelParams = { userId: frontendWalletAddress, orderId };
+        await cancelDCAOrder(cancelParams);
+      } catch (cancelError) {
+        // If cancel fails, continue with deletion anyway
+        console.log(`Order ${orderId} could not be cancelled before deletion:`, cancelError);
+      }
+      
+      // Delete the order from database
+      const result = await deleteDCAOrder({ userId: frontendWalletAddress, orderId });
+      return JSON.stringify(result);
+    } catch (error: any) {
+      console.error('Error in delete_dca_order:', error);
+      return JSON.stringify({ success: false, error: error.message });
+    }
+  }
+}
+
 // Get DCA Order Status Tool
 class GetDCAOrderStatusTool extends StructuredTool {
   name = "get_dca_order_status";
@@ -1571,7 +1696,7 @@ class GetSwapQuoteTool extends StructuredTool {
 // Get DCA System Status Tool
 class GetDCASystemStatusTool extends StructuredTool {
   name = "get_dca_system_status";
-  description = "Gets the current status of the DCA monitoring and execution system";
+  description = "Gets the current status of the DCA monitoring and execution system. NO PARAMETERS NEEDED - just call this tool with empty arguments {}.";
   schema = z.object({});
 
   protected async _call(input: z.infer<typeof this.schema>, runManager?: any): Promise<string> {
@@ -1591,7 +1716,7 @@ class GetDCASystemStatusTool extends StructuredTool {
 // Get User Token Balances Tool
 class GetUserTokenBalancesTool extends StructuredTool {
   name = "get_user_token_balances";
-  description = "Gets the user's current balances for DCA-supported tokens (XFI, USDC). Note: USDT is temporarily disabled due to incorrect pricing.";
+  description = "Gets the user's current balances for DCA-supported tokens (XFI, USDC). Note: USDT is temporarily disabled due to incorrect pricing. NO PARAMETERS NEEDED - just call this tool with empty arguments {}.";
   schema = z.object({});
 
   protected async _call(input: z.infer<typeof this.schema>, runManager?: any): Promise<string> {
@@ -1725,10 +1850,23 @@ class ExecuteSwapTool extends StructuredTool {
       }
 
       const { fromToken, toToken, fromAmount, slippage } = input;
+      
+      // Extract numeric amount from the input (e.g., "2 XFI" -> "2")
+      const numericAmount = fromAmount.replace(/\s*XFI\s*$/i, '').replace(/\s*USDC\s*$/i, '').trim();
+      const parsedAmount = parseFloat(numericAmount);
+      
+      if (isNaN(parsedAmount) || parsedAmount <= 0) {
+        return JSON.stringify({ 
+          success: false, 
+          error: `Invalid amount: ${fromAmount}. Please provide a valid positive number.` 
+        });
+      }
+      
       console.log('💰 ExecuteSwapTool: Swap details:');
       console.log('   From Token:', fromToken);
       console.log('   To Token:', toToken);
-      console.log('   Amount:', fromAmount);
+      console.log('   Original Amount:', fromAmount);
+      console.log('   Parsed Amount:', parsedAmount);
       console.log('   Slippage:', slippage);
       
       // Convert slippage to number if it's a string, default to 5
@@ -1811,7 +1949,7 @@ class ExecuteSwapTool extends StructuredTool {
           }) as bigint;
           
           const balanceFormatted = formatUnits(balance, usdcToken.decimals);
-          const requiredAmount = parseFloat(fromAmount);
+          const requiredAmount = parsedAmount;
           
           console.log(`   USDC Balance: ${balanceFormatted}`);
           console.log(`   Required: ${requiredAmount}`);
@@ -1833,7 +1971,7 @@ class ExecuteSwapTool extends StructuredTool {
       const quote = await SwapService.getSwapQuote({
         fromToken: mappedFromToken,
         toToken: mappedToToken,
-        fromAmount,
+        fromAmount: parsedAmount.toString(),
         slippage: slippageNumber
       });
       console.log('✅ ExecuteSwapTool: Quote received successfully');
@@ -1852,7 +1990,7 @@ class ExecuteSwapTool extends StructuredTool {
       const swapResult = await SwapService.executeSwap(userModel, {
         fromToken: mappedFromToken,
         toToken: mappedToToken,
-        fromAmount,
+        fromAmount: parsedAmount.toString(),
         slippage: slippageNumber
       });
       console.log('📊 ExecuteSwapTool: Swap result received');
@@ -1973,7 +2111,7 @@ class ExecuteSwapTool extends StructuredTool {
 // Get Supported Swap Tokens Tool
 class GetSupportedSwapTokensTool extends StructuredTool {
   name = "get_supported_swap_tokens";
-  description = "Gets the list of supported tokens for swapping. PRIMARY PAIRS: USDC↔XFI (recommended for stablecoin swaps). Note: USDT is temporarily disabled due to incorrect pricing.";
+  description = "Gets the list of supported tokens for swapping. PRIMARY PAIRS: USDC↔XFI (recommended for stablecoin swaps). Note: USDT is temporarily disabled due to incorrect pricing. NO PARAMETERS NEEDED - just call this tool with empty arguments {}.";
   schema = z.object({});
 
   protected async _call(input: z.infer<typeof this.schema>, runManager?: any): Promise<string> {
@@ -2037,6 +2175,7 @@ export const ALL_TOOLS_LIST = [
   new CreatePaymentLinksTool(),
   new PayFixedPaymentLinkTool(),
   new ContributeToGlobalPaymentLinkTool(),
+  new DeletePaymentLinkTool(),
   new CheckPaymentLinkStatusTool(),
   
   // Crypto Assistant Tools - CrossFi Ecosystem Insights
@@ -2053,6 +2192,7 @@ export const ALL_TOOLS_LIST = [
   new CreateDCAOrderTool(),
   new GetUserDCAOrdersTool(),
   new CancelDCAOrderTool(),
+  new DeleteDCAOrderTool(),
   new GetDCAOrderStatusTool(),
   new GetSwapQuoteTool(),
   new GetDCASystemStatusTool(),
@@ -2066,11 +2206,4 @@ export const ALL_TOOLS_LIST = [
   new AddLiquidityTool(),
 ];
 
-// Create Intelligent Tool with access to all other tools
-const intelligentTool = new IntelligentTool(ALL_TOOLS_LIST);
-
-// Add Intelligent Tool to the beginning of the list
-export const ALL_TOOLS_LIST_WITH_INTELLIGENT = [
-  intelligentTool,
-  ...ALL_TOOLS_LIST
-]; 
+ 

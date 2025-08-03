@@ -98,7 +98,15 @@ export const DCAOrders: React.FC = () => {
 
   return (
     <div className="bg-black/20 backdrop-blur-xl border border-green-400/30 rounded-lg p-6">
-      <h3 className="text-lg font-semibold text-green-400 mb-4 font-mono">DCA Orders</h3>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-semibold text-green-400 font-mono">DCA Orders</h3>
+        <button
+          onClick={fetchOrders}
+          className="px-4 py-2 bg-green-500/10 hover:bg-green-500/20 border border-green-500/30 text-green-400 hover:text-green-300 rounded-lg transition-all duration-200 font-mono"
+        >
+          Refresh
+        </button>
+      </div>
       
       {orders.length === 0 ? (
         <p className="text-green-300 font-mono">No DCA orders found</p>
@@ -121,6 +129,12 @@ export const DCAOrders: React.FC = () => {
               </div>
               
               <div className="text-sm text-green-300 font-mono mb-2">
+                <div className="flex items-center space-x-2 mb-1">
+                  <span className="text-green-400/70">ID:</span>
+                  <span className="font-mono text-xs bg-green-400/10 px-2 py-1 rounded border border-green-400/20">
+                    {order.id}
+                  </span>
+                </div>
                 <div>Trigger: When XFI price {order.triggerCondition} ${order.triggerPrice}</div>
                 <div>Created: {new Date(order.createdAt).toLocaleString()}</div>
                 {order.executedAt && (
@@ -147,13 +161,6 @@ export const DCAOrders: React.FC = () => {
           ))}
         </div>
       )}
-      
-      <button
-        onClick={fetchOrders}
-        className="mt-4 px-4 py-2 bg-green-500/10 hover:bg-green-500/20 border border-green-500/30 text-green-400 hover:text-green-300 rounded-lg transition-all duration-200 font-mono"
-      >
-        Refresh
-      </button>
     </div>
   );
 }; 
